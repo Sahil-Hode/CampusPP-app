@@ -44,6 +44,7 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
   String? _resumeFileName;
   bool _isResumeUploading = false;
   bool _hasResume = false;
+  String _resumeSource = 'profile'; // 'profile' or 'upload'
   String _currentText = "Welcome to your AI Mock Interview.";
   String _userTranscription = "";
   Interviewer? _currentInterviewer;
@@ -94,7 +95,12 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
   Future<void> _fetchProfile() async {
     try {
       final profile = await StudentService.getProfile();
-      if (mounted) setState(() => _profile = profile);
+      if (mounted) {
+        setState(() {
+          _profile = profile;
+          _hasResume = (profile.resumeText ?? '').isNotEmpty;
+        });
+      }
     } catch (e) {
       print('Error fetching profile: $e');
     }
@@ -164,7 +170,17 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
   Future<void> _startInterview() async {
     setState(() => _isLoading = true);
     try {
-      final session = await MockInterviewService.startInterview();
+      if (_resumeSource == 'profile' && !_hasResume) {
+        throw Exception('Please upload your resume on your profile first before starting a mock interview.');
+      }
+      if (_resumeSource == 'upload' && _resumePath == null) {
+        throw Exception('Please select a resume to upload.');
+      }
+
+      final session = await MockInterviewService.startInterview(
+        resumeSource: _resumeSource,
+        resumePath: _resumeSource == 'upload' ? _resumePath : null,
+      );
       _sessionId = session.sessionId;
       
       // 1. Set initial state from POST response
@@ -193,6 +209,25 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
           );
         }
       }
+    }
+  }
+
+  Future<void> _pickTempResume() async {
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['pdf', 'doc', 'docx'],
+      );
+      if (result != null && result.files.single.path != null) {
+        setState(() {
+          _resumePath = result.files.single.path;
+          _resumeFileName = result.files.single.name;
+        });
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error picking file: $e')),
+      );
     }
   }
 
@@ -537,55 +572,82 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
 
             // 2. Control Dock (Floating Neobrutalist)
             Container(
-              margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(24),
                 border: Border.all(color: Colors.black, width: 3),
                 boxShadow: const [BoxShadow(color: Colors.black, offset: Offset(4, 4))],
               ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  _buildControlCircle(
-                    icon: _isListening ? Icons.mic : Icons.mic_off,
-                    color: _isListening ? const Color(0xFF81C784) : const Color(0xFFFF8B94),
-                    onTap: _toggleListening,
-                  ),
-                  _buildControlCircle(
-                    icon: _isCameraOff ? Icons.videocam_off : Icons.videocam,
-                    color: _isCameraOff ? const Color(0xFFFF8B94) : const Color(0xFFBBDEFB),
-                    onTap: _toggleCamera,
-                  ),
-                  _buildControlCircle(
-                    icon: Icons.chat_bubble_outline,
-                    color: Colors.grey[200]!,
-                    onTap: () {},
-                  ),
-                  _buildControlCircle(
-                    icon: Icons.auto_fix_high,
-                    color: Colors.grey[200]!,
-                    onTap: () {},
-                  ),
-                  const SizedBox(width: 8),
-                  ElevatedButton(
-                    onPressed: _endInterview,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.red,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                      minimumSize: const Size(60, 45),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        side: const BorderSide(color: Colors.black, width: 2.5),
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final isNarrow = constraints.maxWidth < 360;
+                  return Row(
+                    children: [
+                      Expanded(
+                        child: Wrap(
+                          alignment: WrapAlignment.start,
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: [
+                            _buildControlCircle(
+                              icon: _isListening ? Icons.mic : Icons.mic_off,
+                              color: _isListening ? const Color(0xFF81C784) : const Color(0xFFFF8B94),
+                              onTap: _toggleListening,
+                              size: isNarrow ? 40 : 46,
+                              iconSize: isNarrow ? 18 : 22,
+                            ),
+                            _buildControlCircle(
+                              icon: _isCameraOff ? Icons.videocam_off : Icons.videocam,
+                              color: _isCameraOff ? const Color(0xFFFF8B94) : const Color(0xFFBBDEFB),
+                              onTap: _toggleCamera,
+                              size: isNarrow ? 40 : 46,
+                              iconSize: isNarrow ? 18 : 22,
+                            ),
+                            _buildControlCircle(
+                              icon: Icons.chat_bubble_outline,
+                              color: Colors.grey[200]!,
+                              onTap: () {},
+                              size: isNarrow ? 40 : 46,
+                              iconSize: isNarrow ? 18 : 22,
+                            ),
+                            _buildControlCircle(
+                              icon: Icons.auto_fix_high,
+                              color: Colors.grey[200]!,
+                              onTap: () {},
+                              size: isNarrow ? 40 : 46,
+                              iconSize: isNarrow ? 18 : 22,
+                            ),
+                          ],
+                        ),
                       ),
-                      elevation: 4,
-                      shadowColor: Colors.black,
-                    ),
-                    child: Text('END', style: GoogleFonts.poppins(fontWeight: FontWeight.w900, fontSize: 13)),
-                  ),
-                ],
+                      const SizedBox(width: 8),
+                      SizedBox(
+                        height: isNarrow ? 40 : 46,
+                        child: ElevatedButton(
+                          onPressed: _endInterview,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.red,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(horizontal: 12),
+                            minimumSize: const Size(56, 40),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              side: const BorderSide(color: Colors.black, width: 2.5),
+                            ),
+                            elevation: 4,
+                            shadowColor: Colors.black,
+                          ),
+                          child: Text(
+                            'END',
+                            style: GoogleFonts.poppins(fontWeight: FontWeight.w900, fontSize: isNarrow ? 12 : 13),
+                          ),
+                        ),
+                      ),
+                    ],
+                  );
+                },
               ),
             ),
           ],
@@ -753,8 +815,8 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
       body: Center(
         child: SingleChildScrollView(
           child: Container(
-            padding: const EdgeInsets.all(32),
-            margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
+            padding: const EdgeInsets.all(24),
+            margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 28),
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(30),
@@ -764,103 +826,146 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(Icons.record_voice_over, size: 80, color: Colors.black),
-                const SizedBox(height: 24),
+                Container(
+                  width: 84,
+                  height: 84,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFFF3E0),
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.black, width: 3),
+                    boxShadow: const [
+                      BoxShadow(color: Colors.black, offset: Offset(4, 4), blurRadius: 0),
+                    ],
+                  ),
+                  child: const Icon(Icons.mic_rounded, size: 36, color: Colors.black),
+                ),
+                const SizedBox(height: 14),
                 Text(
                   'VOICE INTERVIEW',
-                  style: GoogleFonts.poppins(fontSize: 28, fontWeight: FontWeight.w900),
+                  style: GoogleFonts.poppins(fontSize: 24, fontWeight: FontWeight.w900),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Pick a resume source and start when you are ready.',
+                  style: GoogleFonts.poppins(fontSize: 13, color: Colors.grey[700]),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 12),
-                Text(
-                  'To provide a personalized experience, the AI panel will analyze your resume before starting.',
-                  style: GoogleFonts.poppins(fontSize: 16, color: Colors.grey[700]),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 32),
 
-                // 📄 Resume Upload Section
+                // 📄 Resume Source Section
                 Container(
-                  padding: const EdgeInsets.all(20),
+                  padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
-                    color: _hasResume ? const Color(0xFFE8F5E9) : const Color(0xFFFFF3E0),
-                    borderRadius: BorderRadius.circular(20),
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(18),
                     border: Border.all(color: Colors.black, width: 2),
                   ),
                   child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(
-                        children: [
-                          Icon(
-                            _hasResume ? Icons.check_circle : Icons.error_outline,
-                            color: _hasResume ? Colors.green : Colors.orange,
-                          ),
-                          const SizedBox(width: 12),
-                          Text(
-                            _hasResume ? 'RESUME READY' : 'RESUME REQUIRED',
-                            style: GoogleFonts.poppins(
-                              fontWeight: FontWeight.w900,
-                              fontSize: 14,
-                              color: _hasResume ? Colors.green[800] : Colors.orange[800],
-                            ),
-                          ),
-                        ],
+                      Text(
+                        'Resume Source',
+                        style: GoogleFonts.poppins(fontWeight: FontWeight.w900, fontSize: 13),
                       ),
-                      const SizedBox(height: 16),
-                      if (_isResumeUploading)
-                        const CircularProgressIndicator(color: Colors.black)
-                      else if (!_hasResume)
+                      const SizedBox(height: 8),
+                      _buildResumeOption(
+                        title: 'Profile Resume',
+                        subtitle: _hasResume ? 'Saved in profile' : 'Not uploaded yet',
+                        selected: _resumeSource == 'profile',
+                        statusColor: _hasResume ? Colors.green : Colors.orange,
+                        onTap: () => setState(() => _resumeSource = 'profile'),
+                      ),
+                      const SizedBox(height: 6),
+                      _buildResumeOption(
+                        title: 'Upload New',
+                        subtitle: _resumeFileName ?? 'PDF or DOCX (this session)',
+                        selected: _resumeSource == 'upload',
+                        statusColor: const Color(0xFF64B5F6),
+                        onTap: () => setState(() => _resumeSource = 'upload'),
+                      ),
+                      const SizedBox(height: 10),
+                      if (_resumeSource == 'profile') ...[
+                        if (_isResumeUploading)
+                          const Center(child: CircularProgressIndicator(color: Colors.black))
+                        else if (!_hasResume)
+                          ElevatedButton.icon(
+                            onPressed: _pickAndUploadResume,
+                            icon: const Icon(Icons.upload_file),
+                            label: const Text('UPLOAD TO PROFILE'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.white,
+                              foregroundColor: Colors.black,
+                              minimumSize: const Size(double.infinity, 44),
+                              side: const BorderSide(color: Colors.black, width: 2),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            ),
+                          )
+                        else
+                          Row(
+                            children: [
+                              const Icon(Icons.description, size: 22),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Text(
+                                  'Resume saved in profile',
+                                  style: const TextStyle(fontWeight: FontWeight.bold, overflow: TextOverflow.ellipsis, fontSize: 13),
+                                ),
+                              ),
+                              TextButton(
+                                onPressed: _pickAndUploadResume,
+                                child: const Text('REPLACE', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold, decoration: TextDecoration.underline, fontSize: 12)),
+                              ),
+                            ],
+                          ),
+                      ] else ...[
                         ElevatedButton.icon(
-                          onPressed: _pickAndUploadResume,
+                          onPressed: _pickTempResume,
                           icon: const Icon(Icons.upload_file),
-                          label: const Text('UPLOAD RESUME'),
+                          label: const Text('SELECT RESUME'),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.white,
                             foregroundColor: Colors.black,
-                            minimumSize: const Size(double.infinity, 50),
+                            minimumSize: const Size(double.infinity, 44),
                             side: const BorderSide(color: Colors.black, width: 2),
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                           ),
-                        )
-                      else
-                        Row(
-                          children: [
-                            const Icon(Icons.description, size: 30),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Text(
-                                _resumeFileName ?? 'Resume.pdf',
-                                style: const TextStyle(fontWeight: FontWeight.bold, overflow: TextOverflow.ellipsis),
-                              ),
-                            ),
-                            TextButton(
-                              onPressed: _pickAndUploadResume,
-                              child: const Text('CHANGE', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold, decoration: TextDecoration.underline)),
-                            ),
-                          ],
                         ),
+                      ],
                     ],
                   ),
                 ),
 
-                const SizedBox(height: 32),
-                
+                const SizedBox(height: 14),
+
                 ElevatedButton(
-                  onPressed: _hasResume ? _startInterview : null,
+                  onPressed: (_resumeSource == 'profile' && _hasResume) ||
+                          (_resumeSource == 'upload' && _resumePath != null)
+                      ? _startInterview
+                      : null,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: _hasResume ? const Color(0xFF40FFA7) : Colors.grey[300],
+                    backgroundColor: ((_resumeSource == 'profile' && _hasResume) ||
+                            (_resumeSource == 'upload' && _resumePath != null))
+                        ? const Color(0xFF40FFA7)
+                        : Colors.grey[300],
                     foregroundColor: Colors.black,
-                    minimumSize: const Size(double.infinity, 64),
+                    minimumSize: const Size(double.infinity, 56),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20), side: const BorderSide(color: Colors.black, width: 3)),
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(_hasResume ? Icons.play_arrow : Icons.lock_outline),
+                      Icon(((_resumeSource == 'profile' && _hasResume) ||
+                              (_resumeSource == 'upload' && _resumePath != null))
+                          ? Icons.play_arrow
+                          : Icons.lock_outline),
                       const SizedBox(width: 8),
                       Flexible(
                         child: Text(
-                          _hasResume ? 'START INTERVIEW' : 'UPLOAD RESUME TO START',
+                          ((_resumeSource == 'profile' && _hasResume) ||
+                                  (_resumeSource == 'upload' && _resumePath != null))
+                              ? 'START INTERVIEW'
+                              : 'SELECT RESUME TO START',
                           style: GoogleFonts.poppins(
                             fontSize: MediaQuery.of(context).size.width < 380 ? 13 : 15,
                             fontWeight: FontWeight.w900,
@@ -874,6 +979,68 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
               ],
             ),
           ),
+        ),
+      ),
+    );
+  }
+
+
+  Widget _buildResumeOption({
+    required String title,
+    required String subtitle,
+    required bool selected,
+    required Color statusColor,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: selected ? const Color(0xFFE3F2FD) : Colors.white,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: Colors.black, width: 2),
+          boxShadow: selected
+              ? const [BoxShadow(color: Colors.black, offset: Offset(3, 3))]
+              : [],
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 14,
+              height: 14,
+              decoration: BoxDecoration(
+                color: selected ? Colors.black : Colors.white,
+                shape: BoxShape.circle,
+                border: Border.all(color: Colors.black, width: 2),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title, style: GoogleFonts.poppins(fontWeight: FontWeight.w900)),
+                  const SizedBox(height: 4),
+                  Text(
+                    subtitle,
+                    style: GoogleFonts.poppins(fontSize: 12, color: Colors.black54),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            Container(
+              width: 10,
+              height: 10,
+              decoration: BoxDecoration(
+                color: statusColor,
+                shape: BoxShape.circle,
+              ),
+            ),
+          ],
         ),
       ),
     );

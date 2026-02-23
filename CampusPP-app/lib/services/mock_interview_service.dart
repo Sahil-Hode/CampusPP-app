@@ -7,17 +7,37 @@ class MockInterviewService {
   static const String _baseUrl = 'https://techxpression-hackathon.onrender.com/api';
   // static const String _baseUrl = 'http://localhost:3000/api'; // Localhost for debugging
 
-  static Future<InterviewSession> startInterview() async {
+  static Future<InterviewSession> startInterview({
+    String resumeSource = 'profile',
+    String? resumePath,
+  }) async {
     final token = await AuthService.getToken();
     if (token == null) throw Exception('No token found');
 
-    final response = await http.post(
-      Uri.parse('$_baseUrl/mock-interview/start'),
-      headers: {
-        'Authorization': 'Bearer $token',
-        'Content-Type': 'application/json',
-      },
-    );
+    http.Response response;
+    if (resumeSource == 'upload') {
+      if (resumePath == null) {
+        throw Exception('Please select a resume to upload.');
+      }
+      final request = http.MultipartRequest(
+        'POST',
+        Uri.parse('$_baseUrl/mock-interview/start'),
+      );
+      request.headers['Authorization'] = 'Bearer $token';
+      request.fields['resumeSource'] = 'upload';
+      request.files.add(await http.MultipartFile.fromPath('resume', resumePath));
+      final streamed = await request.send();
+      response = await http.Response.fromStream(streamed);
+    } else {
+      response = await http.post(
+        Uri.parse('$_baseUrl/mock-interview/start'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({'resumeSource': 'profile'}),
+      );
+    }
 
     print('Start Interview Status: ${response.statusCode}');
     print('Start Interview Body: ${response.body}');
