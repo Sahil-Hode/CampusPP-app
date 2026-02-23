@@ -791,11 +791,19 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
     );
   }
 
-  Widget _buildControlCircle({required IconData icon, required Color color, required VoidCallback onTap}) {
+  Widget _buildControlCircle({
+    required IconData icon,
+    required Color color,
+    required VoidCallback onTap,
+    double size = 46,
+    double iconSize = 24,
+  }) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.all(12),
+        width: size,
+        height: size,
+        alignment: Alignment.center,
         decoration: BoxDecoration(
           color: color,
           shape: BoxShape.circle,
@@ -804,7 +812,7 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
             BoxShadow(color: Colors.black, offset: Offset(3, 3)),
           ],
         ),
-        child: Icon(icon, color: Colors.black, size: 24),
+        child: Icon(icon, color: Colors.black, size: iconSize),
       ),
     );
   }
