@@ -38,6 +38,7 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
   bool _isSpeaking = false;
   bool _isCameraOff = true; // Default to off
   bool _cameraInitialized = false; 
+  bool _showChat = false;
   String? _sessionId;
   StudentProfile? _profile; 
   String? _resumePath;
@@ -435,6 +436,11 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
     if (_feedback != null) return _buildFeedbackView();
     if (!_isInterviewStarted && !_isLoading) return _buildLandingView();
 
+    final participants = _buildParticipants();
+    final activeId = _activeSpeakerId(participants);
+    final activeTile = participants.firstWhere((p) => p.id == activeId, orElse: () => participants.first);
+    final passiveTiles = participants.where((p) => p.id != activeTile.id).toList();
+
     return Scaffold(
       backgroundColor: const Color(0xFFFDEFD9), // Matching landing page vibe
       appBar: AppBar(
@@ -465,249 +471,312 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
         automaticallyImplyLeading: false,
       ),
       body: SafeArea(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center, // Pulls everything towards the center to avoid gaps
-          children: [
-            // 1. 2x2 Video-Call Grid
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-              child: GridView.count(
-                crossAxisCount: 2,
-                crossAxisSpacing: 12,
-                mainAxisSpacing: 12,
-                childAspectRatio: 1.05,
-                shrinkWrap: true, // Takes only necessary space
-                physics: const NeverScrollableScrollPhysics(),
-                children: [
-                   // Tile 1: Candidate (User)
-                   _buildVideoTile(
-                     label: 'LIVEFEED_01',
-                     subLabel: _profile?.name.toUpperCase() ?? 'IDENTIFYING...',
-                     color: const Color(0xFFD1C4E9), 
-                     isHighlighted: _isListening,
-                     content: _cameraController != null && _cameraController!.value.isInitialized && !_isCameraOff
-                         ? CameraPreview(_cameraController!)
-                         : const Icon(Icons.videocam_off, size: 40, color: Colors.black45),
-                   ),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            return Column(
+              children: [
+                // 1. Main speaker + 3 passive tiles
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                    child: Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.transparent,
+                        borderRadius: BorderRadius.circular(22),
+                        border: Border.all(color: Colors.black, width: 3),
+                      ),
+                      child: Column(
+                        children: [
+                          Expanded(
+                            flex: 7,
+                            child: _buildMeetingTile(
+                              tile: activeTile,
+                              isActive: true,
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                          Expanded(
+                            flex: 2,
+                            child: Row(
+                              children: [
+                                for (int i = 0; i < passiveTiles.length; i++) ...[
+                                  Expanded(
+                                    child: _buildMeetingTile(
+                                      tile: passiveTiles[i],
+                                      isActive: false,
+                                    ),
+                                  ),
+                                  if (i != passiveTiles.length - 1) const SizedBox(width: 10),
+                                ],
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
 
-                   // Tile 2: AI Panel (Mr. Arjun)
-                   _buildVideoTile(
-                     label: 'AI_SYSTEM_01',
-                     subLabel: 'MR. ARJUN',
-                     color: const Color(0xFFB3E5FC),
-                     isHighlighted: _isSpeaking && (_currentInterviewer?.name.toUpperCase().contains('ARJUN') ?? true),
-                     content: Column(
-                       mainAxisAlignment: MainAxisAlignment.center,
-                       children: [
-                         Container(
-                           width: 65,
-                           height: 65,
-                           decoration: BoxDecoration(
-                             color: Colors.white,
-                             shape: BoxShape.circle,
-                             border: Border.all(color: Colors.black, width: 2.5),
-                             boxShadow: const [BoxShadow(color: Colors.black, offset: Offset(3, 3))],
-                           ),
-                           child: const Center(child: Text('🤖', style: TextStyle(fontSize: 30))),
-                         ),
-                         const SizedBox(height: 20),
-                       ],
-                     ),
-                   ),
+                const SizedBox(height: 8),
 
-                   // Tile 3: AI Panel (Miss Priya)
-                   _buildVideoTile(
-                     label: 'AI_SYSTEM_02',
-                     subLabel: 'MISS PRIYA',
-                     color: const Color(0xFFE1BEE7), // Soft Magenta/Pink
-                     isHighlighted: _isSpeaking && (_currentInterviewer?.name.toUpperCase().contains('PRIYA') ?? false),
-                     content: Column(
-                       mainAxisAlignment: MainAxisAlignment.center,
-                       children: [
-                         Container(
-                           width: 65,
-                           height: 65,
-                           decoration: BoxDecoration(
-                             color: Colors.white,
-                             shape: BoxShape.circle,
-                             border: Border.all(color: Colors.black, width: 2.5),
-                             boxShadow: const [BoxShadow(color: Colors.black, offset: Offset(3, 3))],
-                           ),
-                           child: const Center(child: Text('👩‍💻', style: TextStyle(fontSize: 30))),
-                         ),
-                         const SizedBox(height: 20),
-                       ],
-                     ),
-                   ),
+                if (_showChat)
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+                    child: Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: Colors.black, width: 2.5),
+                        boxShadow: const [BoxShadow(color: Colors.black, offset: Offset(3, 3))],
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'LIVE TRANSCRIPT',
+                            style: GoogleFonts.poppins(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: 1.1,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          _buildTranscriptRow(
+                            label: _currentInterviewer?.name.toUpperCase() ?? 'INTERVIEWER',
+                            text: _currentText.isEmpty ? '...' : _currentText,
+                            isUser: false,
+                          ),
+                          const SizedBox(height: 6),
+                          _buildTranscriptRow(
+                            label: _profile?.name.toUpperCase() ?? 'YOU',
+                            text: _userTranscription.isEmpty ? '...' : _userTranscription,
+                            isUser: true,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
 
-                   // Tile 4: AI Panel (Mr. Vikram)
-                   _buildVideoTile(
-                     label: 'AI_SYSTEM_03',
-                     subLabel: 'MR. VIKRAM',
-                     color: const Color(0xFFFFF9C4), // Soft Yellow
-                     isHighlighted: _isSpeaking && (_currentInterviewer?.name.toUpperCase().contains('VIKRAM') ?? false),
-                     content: Column(
-                       mainAxisAlignment: MainAxisAlignment.center,
-                       children: [
-                         Container(
-                           width: 65,
-                           height: 65,
-                           decoration: BoxDecoration(
-                             color: Colors.white,
-                             shape: BoxShape.circle,
-                             border: Border.all(color: Colors.black, width: 2.5),
-                             boxShadow: const [BoxShadow(color: Colors.black, offset: Offset(3, 3))],
-                           ),
-                           child: const Center(child: Text('👨‍💼', style: TextStyle(fontSize: 30))),
-                         ),
-                         const SizedBox(height: 20),
-                       ],
-                     ),
-                   ),
-                 ],
-              ),
-            ),
-
-            const SizedBox(height: 12), // Tighter spacing
-
-            // 2. Control Dock (Floating Neobrutalist)
-            Container(
-              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(24),
-                border: Border.all(color: Colors.black, width: 3),
-                boxShadow: const [BoxShadow(color: Colors.black, offset: Offset(4, 4))],
-              ),
-              child: LayoutBuilder(
-                builder: (context, constraints) {
-                  final isNarrow = constraints.maxWidth < 360;
-                  return Row(
-                    children: [
-                      Expanded(
-                        child: Wrap(
-                          alignment: WrapAlignment.start,
-                          spacing: 8,
-                          runSpacing: 8,
+                // 2. Control Dock (Floating Neobrutalist)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(24),
+                      border: Border.all(color: Colors.black, width: 3),
+                      boxShadow: const [BoxShadow(color: Colors.black, offset: Offset(4, 4))],
+                    ),
+                    child: LayoutBuilder(
+                      builder: (context, constraints) {
+                        final isNarrow = constraints.maxWidth < 360;
+                        return Row(
                           children: [
-                            _buildControlCircle(
-                              icon: _isListening ? Icons.mic : Icons.mic_off,
-                              color: _isListening ? const Color(0xFF81C784) : const Color(0xFFFF8B94),
-                              onTap: _toggleListening,
-                              size: isNarrow ? 40 : 46,
-                              iconSize: isNarrow ? 18 : 22,
+                            Expanded(
+                              child: Wrap(
+                                alignment: WrapAlignment.start,
+                                spacing: 8,
+                                runSpacing: 8,
+                                children: [
+                                  _buildControlCircle(
+                                    icon: _isListening ? Icons.mic : Icons.mic_off,
+                                    color: _isListening ? const Color(0xFF81C784) : const Color(0xFFFF8B94),
+                                    onTap: _toggleListening,
+                                    size: isNarrow ? 40 : 46,
+                                    iconSize: isNarrow ? 18 : 22,
+                                  ),
+                                  _buildControlCircle(
+                                    icon: _isCameraOff ? Icons.videocam_off : Icons.videocam,
+                                    color: _isCameraOff ? const Color(0xFFFF8B94) : const Color(0xFFBBDEFB),
+                                    onTap: _toggleCamera,
+                                    size: isNarrow ? 40 : 46,
+                                    iconSize: isNarrow ? 18 : 22,
+                                  ),
+                                  _buildControlCircle(
+                                    icon: Icons.chat_bubble_outline,
+                                    color: Colors.grey[200]!,
+                                    onTap: () => setState(() => _showChat = !_showChat),
+                                    size: isNarrow ? 40 : 46,
+                                    iconSize: isNarrow ? 18 : 22,
+                                  ),
+                                  _buildControlCircle(
+                                    icon: Icons.auto_fix_high,
+                                    color: Colors.grey[200]!,
+                                    onTap: () {},
+                                    size: isNarrow ? 40 : 46,
+                                    iconSize: isNarrow ? 18 : 22,
+                                  ),
+                                ],
+                              ),
                             ),
-                            _buildControlCircle(
-                              icon: _isCameraOff ? Icons.videocam_off : Icons.videocam,
-                              color: _isCameraOff ? const Color(0xFFFF8B94) : const Color(0xFFBBDEFB),
-                              onTap: _toggleCamera,
-                              size: isNarrow ? 40 : 46,
-                              iconSize: isNarrow ? 18 : 22,
-                            ),
-                            _buildControlCircle(
-                              icon: Icons.chat_bubble_outline,
-                              color: Colors.grey[200]!,
-                              onTap: () {},
-                              size: isNarrow ? 40 : 46,
-                              iconSize: isNarrow ? 18 : 22,
-                            ),
-                            _buildControlCircle(
-                              icon: Icons.auto_fix_high,
-                              color: Colors.grey[200]!,
-                              onTap: () {},
-                              size: isNarrow ? 40 : 46,
-                              iconSize: isNarrow ? 18 : 22,
+                            const SizedBox(width: 8),
+                            SizedBox(
+                              height: isNarrow ? 40 : 46,
+                              child: ElevatedButton(
+                                onPressed: _endInterview,
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.red,
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                                  minimumSize: const Size(56, 40),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    side: const BorderSide(color: Colors.black, width: 2.5),
+                                  ),
+                                  elevation: 4,
+                                  shadowColor: Colors.black,
+                                ),
+                                child: Text(
+                                  'END',
+                                  style: GoogleFonts.poppins(fontWeight: FontWeight.w900, fontSize: isNarrow ? 12 : 13),
+                                ),
+                              ),
                             ),
                           ],
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      SizedBox(
-                        height: isNarrow ? 40 : 46,
-                        child: ElevatedButton(
-                          onPressed: _endInterview,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.red,
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(horizontal: 12),
-                            minimumSize: const Size(56, 40),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              side: const BorderSide(color: Colors.black, width: 2.5),
-                            ),
-                            elevation: 4,
-                            shadowColor: Colors.black,
-                          ),
-                          child: Text(
-                            'END',
-                            style: GoogleFonts.poppins(fontWeight: FontWeight.w900, fontSize: isNarrow ? 12 : 13),
-                          ),
-                        ),
-                      ),
-                    ],
-                  );
-                },
-              ),
-            ),
-          ],
+                        );
+                      },
+                    ),
+                  ),
+                ),
+              ],
+            );
+          },
         ),
       ),
     );
   }
 
-  Widget _buildVideoTile({
-    required String label,
-    String? subLabel,
-    required Color color,
-    required Widget content,
-    bool isHighlighted = false,
+  String _activeSpeakerId(List<_ParticipantTile> tiles) {
+    if (_isListening) return 'user';
+    if (_isSpeaking && _currentInterviewer != null) {
+      final name = _currentInterviewer!.name.toUpperCase();
+      if (name.contains('ARJUN')) return 'arjun';
+      if (name.contains('PRIYA')) return 'priya';
+      if (name.contains('VIKRAM')) return 'vikram';
+    }
+    return 'user';
+  }
+
+  List<_ParticipantTile> _buildParticipants() {
+    return [
+      _ParticipantTile(
+        id: 'user',
+        label: 'LIVEFEED_01',
+        subLabel: _profile?.name.toUpperCase() ?? 'IDENTIFYING...',
+        color: const Color(0xFFD1C4E9),
+        content: _buildUserCamera(),
+      ),
+      _ParticipantTile(
+        id: 'arjun',
+        label: 'AI_SYSTEM_01',
+        subLabel: 'MR. ARJUN',
+        color: const Color(0xFFB3E5FC),
+        content: _buildAiAvatar('🤖'),
+      ),
+      _ParticipantTile(
+        id: 'priya',
+        label: 'AI_SYSTEM_02',
+        subLabel: 'MISS PRIYA',
+        color: const Color(0xFFE1BEE7),
+        content: _buildAiAvatar('👩‍💻'),
+      ),
+      _ParticipantTile(
+        id: 'vikram',
+        label: 'AI_SYSTEM_03',
+        subLabel: 'MR. VIKRAM',
+        color: const Color(0xFFFFF9C4),
+        content: _buildAiAvatar('👨‍💼'),
+      ),
+    ];
+  }
+
+  Widget _buildUserCamera() {
+    if (_cameraController == null || !_cameraController!.value.isInitialized || _isCameraOff) {
+      return const Icon(Icons.videocam_off, size: 40, color: Colors.black45);
+    }
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(18),
+      child: FittedBox(
+        fit: BoxFit.cover,
+        child: SizedBox(
+          width: _cameraController!.value.previewSize?.height ?? 0,
+          height: _cameraController!.value.previewSize?.width ?? 0,
+          child: CameraPreview(_cameraController!),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAiAvatar(String emoji) {
+    return Container(
+      width: 70,
+      height: 70,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        shape: BoxShape.circle,
+        border: Border.all(color: Colors.black, width: 2.5),
+        boxShadow: const [BoxShadow(color: Colors.black, offset: Offset(3, 3))],
+      ),
+      child: Center(
+        child: Text(
+          emoji,
+          style: const TextStyle(fontSize: 28),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMeetingTile({
+    required _ParticipantTile tile,
+    required bool isActive,
   }) {
     return Container(
       decoration: BoxDecoration(
-        color: color,
+        color: tile.color,
         borderRadius: BorderRadius.circular(24),
         border: Border.all(
-          color: isHighlighted ? (label.startsWith('LIVEFEED') ? const Color(0xFF40FFA7) : const Color(0xFF40DBFF)) : Colors.black,
-          width: isHighlighted ? 5 : 3,
+          color: isActive
+              ? (tile.label.startsWith('LIVEFEED') ? const Color(0xFF40FFA7) : const Color(0xFF40DBFF))
+              : Colors.black,
+          width: isActive ? 5 : 3,
         ),
         boxShadow: [
           BoxShadow(
             color: Colors.black,
-            offset: isHighlighted ? const Offset(0, 0) : const Offset(6, 6),
-            blurRadius: isHighlighted ? 15 : 0,
+            offset: isActive ? const Offset(0, 0) : const Offset(6, 6),
+            blurRadius: isActive ? 15 : 0,
           ),
-          if (isHighlighted)
+          if (isActive)
             BoxShadow(
-              color: (label.startsWith('LIVEFEED') ? const Color(0xFF40FFA7) : const Color(0xFF40DBFF)).withOpacity(0.5),
+              color: (tile.label.startsWith('LIVEFEED') ? const Color(0xFF40FFA7) : const Color(0xFF40DBFF)).withOpacity(0.5),
               blurRadius: 20,
             ),
         ],
       ),
       child: Stack(
         children: [
-          // Subtle Inner Tech-Border
           Positioned.fill(
             child: Padding(
-              padding: const EdgeInsets.all(6.0),
+              padding: const EdgeInsets.all(3.0),
               child: Container(
                 decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(18),
+                  borderRadius: BorderRadius.circular(20),
                   border: Border.all(color: Colors.black.withOpacity(0.05), width: 1),
                 ),
               ),
             ),
           ),
 
-          // Main Content (Centered)
           Positioned.fill(
             child: ClipRRect(
-              borderRadius: BorderRadius.circular(21),
-              child: Center(child: content),
+              borderRadius: BorderRadius.circular(22),
+              child: Center(child: tile.content),
             ),
           ),
 
-          // Technical Label Tab (Top Left)
           Positioned(
             top: 0,
             left: 12,
@@ -718,7 +787,7 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
                 borderRadius: BorderRadius.vertical(bottom: Radius.circular(8)),
               ),
               child: Text(
-                label,
+                tile.label,
                 style: GoogleFonts.poppins(
                   fontSize: 7,
                   fontWeight: FontWeight.w900,
@@ -729,8 +798,7 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
             ),
           ),
 
-          // Sticky Note Name Plate (Bottom Left)
-          if (subLabel != null)
+          if (tile.subLabel != null)
             Positioned(
               bottom: 12,
               left: 12,
@@ -742,7 +810,7 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
                   boxShadow: const [BoxShadow(color: Colors.black, offset: Offset(2, 2))],
                 ),
                 child: Text(
-                  subLabel,
+                  tile.subLabel!,
                   style: GoogleFonts.poppins(
                     color: Colors.black,
                     fontSize: 8,
@@ -752,7 +820,6 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
               ),
             ),
 
-          // Geometric Accent (Bottom Right)
           Positioned(
             bottom: 8,
             right: 8,
@@ -770,6 +837,27 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
               ),
             ),
           ),
+          if (isActive)
+            Positioned(
+              top: 10,
+              right: 12,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: Colors.black,
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Text(
+                  'SPEAKING',
+                  style: GoogleFonts.poppins(
+                    fontSize: 7,
+                    fontWeight: FontWeight.w900,
+                    color: Colors.white,
+                    letterSpacing: 0.8,
+                  ),
+                ),
+              ),
+            ),
         ],
       ),
     );
@@ -813,6 +901,35 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
           ],
         ),
         child: Icon(icon, color: Colors.black, size: iconSize),
+      ),
+    );
+  }
+
+  Widget _buildTranscriptRow({
+    required String label,
+    required String text,
+    required bool isUser,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      decoration: BoxDecoration(
+        color: isUser ? const Color(0xFFFFF3E0) : const Color(0xFFE3F2FD),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.black, width: 1.5),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: GoogleFonts.poppins(fontSize: 9, fontWeight: FontWeight.w900),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            text,
+            style: GoogleFonts.poppins(fontSize: 11, fontWeight: FontWeight.w600),
+          ),
+        ],
       ),
     );
   }
@@ -1131,4 +1248,20 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
       ),
     );
   }
+}
+
+class _ParticipantTile {
+  final String id;
+  final String label;
+  final String? subLabel;
+  final Color color;
+  final Widget content;
+
+  const _ParticipantTile({
+    required this.id,
+    required this.label,
+    required this.subLabel,
+    required this.color,
+    required this.content,
+  });
 }
