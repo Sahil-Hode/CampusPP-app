@@ -25,11 +25,12 @@ class MockInterviewPage extends StatefulWidget {
 
 class _MockInterviewPageState extends State<MockInterviewPage> {
   // Services
-  final MockInterviewSocketService _socketService = MockInterviewSocketService();
+  final MockInterviewSocketService _socketService =
+      MockInterviewSocketService();
   final AudioRecorder _recorder = AudioRecorder();
   final AudioPlayer _audioPlayer = AudioPlayer();
   CameraController? _cameraController;
-  
+
   // State
   bool _isInterviewStarted = false;
   bool _isLoading = false;
@@ -37,10 +38,10 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
   bool _isProcessing = false;
   bool _isSpeaking = false;
   bool _isCameraOff = true; // Default to off
-  bool _cameraInitialized = false; 
+  bool _cameraInitialized = false;
   bool _showChat = false;
   String? _sessionId;
-  StudentProfile? _profile; 
+  StudentProfile? _profile;
   String? _resumePath;
   String? _resumeFileName;
   bool _isResumeUploading = false;
@@ -50,7 +51,7 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
   String _userTranscription = "";
   Interviewer? _currentInterviewer;
   InterviewFeedback? _feedback;
-  
+
   StreamSubscription? _statusSub;
   StreamSubscription? _msgSub;
   StreamSubscription? _audioSub;
@@ -70,7 +71,7 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
     try {
       final cameras = await availableCameras();
       if (cameras.isEmpty) return;
-      
+
       final frontCamera = cameras.firstWhere(
         (camera) => camera.lensDirection == CameraLensDirection.front,
         orElse: () => cameras.first,
@@ -122,7 +123,9 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
           if (status == 'streaming') _userTranscription = "Speak now...";
           if (status == 'error') {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Interviewer connection issue. Retrying...')),
+              const SnackBar(
+                content: Text('Interviewer connection issue. Retrying...'),
+              ),
             );
           }
         });
@@ -141,20 +144,20 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
     });
 
     _audioSub = _socketService.audio.listen((data) async {
-       if (data['audioBase64'] != null) {
-         try {
-           final base64String = data['audioBase64'] as String;
-           print('Playing AI Voice (Base64 length: ${base64String.length})');
-           final bytes = base64Decode(base64String);
-           
-           // For Web, ensure we use the correct mime type if possible
-           await _audioPlayer.play(
-             BytesSource(Uint8List.fromList(bytes), mimeType: 'audio/mp3'),
-           );
-         } catch (e) {
-           print('Error playing AI Audio: $e');
-         }
-       }
+      if (data['audioBase64'] != null) {
+        try {
+          final base64String = data['audioBase64'] as String;
+          print('Playing AI Voice (Base64 length: ${base64String.length})');
+          final bytes = base64Decode(base64String);
+
+          // For Web, ensure we use the correct mime type if possible
+          await _audioPlayer.play(
+            BytesSource(Uint8List.fromList(bytes), mimeType: 'audio/mp3'),
+          );
+        } catch (e) {
+          print('Error playing AI Audio: $e');
+        }
+      }
     });
 
     _transcriptionSub = _socketService.transcription.listen((data) {
@@ -172,7 +175,9 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
     setState(() => _isLoading = true);
     try {
       if (_resumeSource == 'profile' && !_hasResume) {
-        throw Exception('Please upload your resume on your profile first before starting a mock interview.');
+        throw Exception(
+          'Please upload your resume on your profile first before starting a mock interview.',
+        );
       }
       if (_resumeSource == 'upload' && _resumePath == null) {
         throw Exception('Please select a resume to upload.');
@@ -183,7 +188,7 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
         resumePath: _resumeSource == 'upload' ? _resumePath : null,
       );
       _sessionId = session.sessionId;
-      
+
       // 1. Set initial state from POST response
       if (mounted) {
         setState(() {
@@ -196,7 +201,6 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
 
       // 2. Connect to Socket
       await _socketService.connect(_sessionId!);
-      
     } catch (e) {
       if (mounted) {
         setState(() => _isLoading = false);
@@ -205,9 +209,9 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
         if (errorStr.contains('upload your resume')) {
           _showResumeUploadDialog();
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Error: $errorStr')),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text('Error: $errorStr')));
         }
       }
     }
@@ -226,9 +230,9 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
         });
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error picking file: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error picking file: $e')));
     }
   }
 
@@ -237,24 +241,57 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20), side: const BorderSide(color: Colors.black, width: 2)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+          side: const BorderSide(color: Colors.black, width: 2),
+        ),
         title: Row(
           children: [
-            const Icon(Icons.warning_amber_rounded, color: Colors.orange, size: 28),
+            const Icon(
+              Icons.warning_amber_rounded,
+              color: Colors.orange,
+              size: 28,
+            ),
             const SizedBox(width: 12),
-            Text('Resume Required', style: GoogleFonts.poppins(fontWeight: FontWeight.w900)),
+            Text(
+              'Resume Required',
+              style: GoogleFonts.poppins(fontWeight: FontWeight.w900),
+            ),
           ],
         ),
-        content: Text('Our AI panel needs your resume to prepare personalized interview questions based on your experience.', style: GoogleFonts.poppins()),
+        content: Text(
+          'Our AI panel needs your resume to prepare personalized interview questions based on your experience.',
+          style: GoogleFonts.poppins(),
+        ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: Text('CANCEL', style: GoogleFonts.poppins(color: Colors.grey))),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(
+              'CANCEL',
+              style: GoogleFonts.poppins(color: Colors.grey),
+            ),
+          ),
           ElevatedButton(
             onPressed: () {
               Navigator.pop(context);
-              Navigator.push(context, MaterialPageRoute(builder: (context) => const ResumeUploadPage()));
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const ResumeUploadPage(),
+                ),
+              );
             },
-            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF40FFA7), side: const BorderSide(color: Colors.black, width: 2)),
-            child: Text('GO TO UPLOAD', style: GoogleFonts.poppins(color: Colors.black, fontWeight: FontWeight.bold)),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF40FFA7),
+              side: const BorderSide(color: Colors.black, width: 2),
+            ),
+            child: Text(
+              'GO TO UPLOAD',
+              style: GoogleFonts.poppins(
+                color: Colors.black,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
           ),
         ],
       ),
@@ -285,9 +322,12 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
           });
           // Fetch profile to get the name from the newly uploaded resume
           _fetchProfile();
-          
+
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Resume uploaded successfully!'), backgroundColor: Colors.green),
+            const SnackBar(
+              content: Text('Resume uploaded successfully!'),
+              backgroundColor: Colors.green,
+            ),
           );
         }
       }
@@ -295,7 +335,10 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
       if (mounted) {
         setState(() => _isResumeUploading = false);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Upload failed: $e'), backgroundColor: Colors.red),
+          SnackBar(
+            content: Text('Upload failed: $e'),
+            backgroundColor: Colors.red,
+          ),
         );
       }
     }
@@ -315,14 +358,16 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
     if (await _recorder.hasPermission()) {
       print('DEBUG: Mic permission granted. Starting stream...');
       // Create a stream of audio data
-      final stream = await _recorder.startStream(const RecordConfig(
-        encoder: AudioEncoder.pcm16bits,
-        sampleRate: 16000,
-        numChannels: 1,
-      ));
-      
+      final stream = await _recorder.startStream(
+        const RecordConfig(
+          encoder: AudioEncoder.pcm16bits,
+          sampleRate: 16000,
+          numChannels: 1,
+        ),
+      );
+
       _socketService.startVoiceStream();
-      
+
       _recordSub = stream.listen((data) {
         _socketService.sendAudioChunk(data);
       });
@@ -347,7 +392,9 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
   }
 
   void _toggleCamera() async {
-    print('DEBUG: Toggling Camera. Initialized: $_cameraInitialized, Current off: $_isCameraOff');
+    print(
+      'DEBUG: Toggling Camera. Initialized: $_cameraInitialized, Current off: $_isCameraOff',
+    );
     if (!_cameraInitialized) {
       print('DEBUG: Camera not initialized. Starting init...');
       await _initCamera();
@@ -365,15 +412,39 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20), side: const BorderSide(color: Colors.black, width: 2)),
-        title: Text('End Interview?', style: GoogleFonts.poppins(fontWeight: FontWeight.w900)),
-        content: Text('Are you sure you want to end the session? Your feedback will be generated now.', style: GoogleFonts.poppins()),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+          side: const BorderSide(color: Colors.black, width: 2),
+        ),
+        title: Text(
+          'End Interview?',
+          style: GoogleFonts.poppins(fontWeight: FontWeight.w900),
+        ),
+        content: Text(
+          'Are you sure you want to end the session? Your feedback will be generated now.',
+          style: GoogleFonts.poppins(),
+        ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: Text('No, Continue', style: GoogleFonts.poppins(color: Colors.grey))),
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(
+              'No, Continue',
+              style: GoogleFonts.poppins(color: Colors.grey),
+            ),
+          ),
           ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red, side: const BorderSide(color: Colors.black, width: 2)),
-            child: Text('End Now', style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.bold)),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              side: const BorderSide(color: Colors.black, width: 2),
+            ),
+            child: Text(
+              'End Now',
+              style: GoogleFonts.poppins(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
           ),
         ],
       ),
@@ -387,7 +458,7 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
     try {
       // 1. Tell socket we are ending
       _socketService.endInterview();
-      
+
       // 2. Clear all local resources
       await _recorder.stop();
       await _audioPlayer.stop();
@@ -396,22 +467,24 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
 
       // 3. Call REST API to get final feedback as fallback (most reliable)
       final feedback = await MockInterviewService.endInterview(_sessionId!);
-      
+
       if (mounted) {
         setState(() {
           _feedback = feedback;
           _isLoading = false;
           _isInterviewStarted = false;
         });
-        print('DEBUG: Interview Ended successfully. Feedback received: ${_feedback?.feedback['score']}');
+        print(
+          'DEBUG: Interview Ended successfully. Feedback received: ${_feedback?.feedback['score']}',
+        );
       }
     } catch (e) {
       print('DEBUG: End Interview Error: $e');
       if (mounted) {
         setState(() => _isLoading = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error ending interview: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error ending interview: $e')));
       }
     }
   }
@@ -438,8 +511,13 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
 
     final participants = _buildParticipants();
     final activeId = _activeSpeakerId(participants);
-    final activeTile = participants.firstWhere((p) => p.id == activeId, orElse: () => participants.first);
-    final passiveTiles = participants.where((p) => p.id != activeTile.id).toList();
+    final activeTile = participants.firstWhere(
+      (p) => p.id == activeId,
+      orElse: () => participants.first,
+    );
+    final passiveTiles = participants
+        .where((p) => p.id != activeTile.id)
+        .toList();
 
     return Scaffold(
       backgroundColor: const Color(0xFFFDEFD9), // Matching landing page vibe
@@ -458,9 +536,9 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
             Text(
               'Live simulation with AI panel',
               style: GoogleFonts.poppins(
-                 fontSize: 11,
-                 color: Colors.black54,
-                 fontWeight: FontWeight.w700,
+                fontSize: 11,
+                color: Colors.black54,
+                fontWeight: FontWeight.w700,
               ),
             ),
           ],
@@ -478,7 +556,10 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
                 // 1. Main speaker + 3 passive tiles
                 Expanded(
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16.0,
+                      vertical: 8.0,
+                    ),
                     child: Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
@@ -500,14 +581,19 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
                             flex: 2,
                             child: Row(
                               children: [
-                                for (int i = 0; i < passiveTiles.length; i++) ...[
+                                for (
+                                  int i = 0;
+                                  i < passiveTiles.length;
+                                  i++
+                                ) ...[
                                   Expanded(
                                     child: _buildMeetingTile(
                                       tile: passiveTiles[i],
                                       isActive: false,
                                     ),
                                   ),
-                                  if (i != passiveTiles.length - 1) const SizedBox(width: 10),
+                                  if (i != passiveTiles.length - 1)
+                                    const SizedBox(width: 10),
                                 ],
                               ],
                             ),
@@ -529,7 +615,9 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(color: Colors.black, width: 2.5),
-                        boxShadow: const [BoxShadow(color: Colors.black, offset: Offset(3, 3))],
+                        boxShadow: const [
+                          BoxShadow(color: Colors.black, offset: Offset(3, 3)),
+                        ],
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -544,14 +632,18 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
                           ),
                           const SizedBox(height: 8),
                           _buildTranscriptRow(
-                            label: _currentInterviewer?.name.toUpperCase() ?? 'INTERVIEWER',
+                            label:
+                                _currentInterviewer?.name.toUpperCase() ??
+                                'INTERVIEWER',
                             text: _currentText.isEmpty ? '...' : _currentText,
                             isUser: false,
                           ),
                           const SizedBox(height: 6),
                           _buildTranscriptRow(
                             label: _profile?.name.toUpperCase() ?? 'YOU',
-                            text: _userTranscription.isEmpty ? '...' : _userTranscription,
+                            text: _userTranscription.isEmpty
+                                ? '...'
+                                : _userTranscription,
                             isUser: true,
                           ),
                         ],
@@ -563,79 +655,96 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 10,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(24),
                       border: Border.all(color: Colors.black, width: 3),
-                      boxShadow: const [BoxShadow(color: Colors.black, offset: Offset(4, 4))],
+                      boxShadow: const [
+                        BoxShadow(color: Colors.black, offset: Offset(4, 4)),
+                      ],
                     ),
                     child: LayoutBuilder(
                       builder: (context, constraints) {
                         final isNarrow = constraints.maxWidth < 360;
-                        return Row(
-                          children: [
-                            Expanded(
-                              child: Wrap(
-                                alignment: WrapAlignment.start,
-                                spacing: 8,
-                                runSpacing: 8,
-                                children: [
-                                  _buildControlCircle(
-                                    icon: _isListening ? Icons.mic : Icons.mic_off,
-                                    color: _isListening ? const Color(0xFF81C784) : const Color(0xFFFF8B94),
-                                    onTap: _toggleListening,
-                                    size: isNarrow ? 40 : 46,
-                                    iconSize: isNarrow ? 18 : 22,
-                                  ),
-                                  _buildControlCircle(
-                                    icon: _isCameraOff ? Icons.videocam_off : Icons.videocam,
-                                    color: _isCameraOff ? const Color(0xFFFF8B94) : const Color(0xFFBBDEFB),
-                                    onTap: _toggleCamera,
-                                    size: isNarrow ? 40 : 46,
-                                    iconSize: isNarrow ? 18 : 22,
-                                  ),
-                                  _buildControlCircle(
-                                    icon: Icons.chat_bubble_outline,
-                                    color: Colors.grey[200]!,
-                                    onTap: () => setState(() => _showChat = !_showChat),
-                                    size: isNarrow ? 40 : 46,
-                                    iconSize: isNarrow ? 18 : 22,
-                                  ),
-                                  _buildControlCircle(
-                                    icon: Icons.auto_fix_high,
-                                    color: Colors.grey[200]!,
-                                    onTap: () {},
-                                    size: isNarrow ? 40 : 46,
-                                    iconSize: isNarrow ? 18 : 22,
-                                  ),
-                                ],
+                        return SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          child: Row(
+                            children: [
+                              _buildControlCircle(
+                                icon: _isListening ? Icons.mic : Icons.mic_off,
+                                color: _isListening
+                                    ? const Color(0xFF81C784)
+                                    : const Color(0xFFFF8B94),
+                                onTap: _toggleListening,
+                                size: isNarrow ? 40 : 46,
+                                iconSize: isNarrow ? 18 : 22,
                               ),
-                            ),
-                            const SizedBox(width: 8),
-                            SizedBox(
-                              height: isNarrow ? 40 : 46,
-                              child: ElevatedButton(
-                                onPressed: _endInterview,
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.red,
-                                  foregroundColor: Colors.white,
-                                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                                  minimumSize: const Size(56, 40),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                    side: const BorderSide(color: Colors.black, width: 2.5),
+                              const SizedBox(width: 8),
+                              _buildControlCircle(
+                                icon: _isCameraOff
+                                    ? Icons.videocam_off
+                                    : Icons.videocam,
+                                color: _isCameraOff
+                                    ? const Color(0xFFFF8B94)
+                                    : const Color(0xFFBBDEFB),
+                                onTap: _toggleCamera,
+                                size: isNarrow ? 40 : 46,
+                                iconSize: isNarrow ? 18 : 22,
+                              ),
+                              const SizedBox(width: 8),
+                              _buildControlCircle(
+                                icon: Icons.chat_bubble_outline,
+                                color: Colors.grey[200]!,
+                                onTap: () =>
+                                    setState(() => _showChat = !_showChat),
+                                size: isNarrow ? 40 : 46,
+                                iconSize: isNarrow ? 18 : 22,
+                              ),
+                              const SizedBox(width: 8),
+                              _buildControlCircle(
+                                icon: Icons.auto_fix_high,
+                                color: Colors.grey[200]!,
+                                onTap: () {},
+                                size: isNarrow ? 40 : 46,
+                                iconSize: isNarrow ? 18 : 22,
+                              ),
+                              const SizedBox(width: 10),
+                              SizedBox(
+                                height: isNarrow ? 40 : 46,
+                                child: ElevatedButton(
+                                  onPressed: _endInterview,
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.red,
+                                    foregroundColor: Colors.white,
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 12,
+                                    ),
+                                    minimumSize: const Size(56, 40),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                      side: const BorderSide(
+                                        color: Colors.black,
+                                        width: 2.5,
+                                      ),
+                                    ),
+                                    elevation: 4,
+                                    shadowColor: Colors.black,
                                   ),
-                                  elevation: 4,
-                                  shadowColor: Colors.black,
-                                ),
-                                child: Text(
-                                  'END',
-                                  style: GoogleFonts.poppins(fontWeight: FontWeight.w900, fontSize: isNarrow ? 12 : 13),
+                                  child: Text(
+                                    'END',
+                                    style: GoogleFonts.poppins(
+                                      fontWeight: FontWeight.w900,
+                                      fontSize: isNarrow ? 12 : 13,
+                                    ),
+                                  ),
                                 ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         );
                       },
                     ),
@@ -694,7 +803,9 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
   }
 
   Widget _buildUserCamera() {
-    if (_cameraController == null || !_cameraController!.value.isInitialized || _isCameraOff) {
+    if (_cameraController == null ||
+        !_cameraController!.value.isInitialized ||
+        _isCameraOff) {
       return const Icon(Icons.videocam_off, size: 40, color: Colors.black45);
     }
     return ClipRRect(
@@ -720,12 +831,7 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
         border: Border.all(color: Colors.black, width: 2.5),
         boxShadow: const [BoxShadow(color: Colors.black, offset: Offset(3, 3))],
       ),
-      child: Center(
-        child: Text(
-          emoji,
-          style: const TextStyle(fontSize: 28),
-        ),
-      ),
+      child: Center(child: Text(emoji, style: const TextStyle(fontSize: 28))),
     );
   }
 
@@ -739,7 +845,9 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
         borderRadius: BorderRadius.circular(24),
         border: Border.all(
           color: isActive
-              ? (tile.label.startsWith('LIVEFEED') ? const Color(0xFF40FFA7) : const Color(0xFF40DBFF))
+              ? (tile.label.startsWith('LIVEFEED')
+                    ? const Color(0xFF40FFA7)
+                    : const Color(0xFF40DBFF))
               : Colors.black,
           width: isActive ? 5 : 3,
         ),
@@ -751,7 +859,11 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
           ),
           if (isActive)
             BoxShadow(
-              color: (tile.label.startsWith('LIVEFEED') ? const Color(0xFF40FFA7) : const Color(0xFF40DBFF)).withOpacity(0.5),
+              color:
+                  (tile.label.startsWith('LIVEFEED')
+                          ? const Color(0xFF40FFA7)
+                          : const Color(0xFF40DBFF))
+                      .withOpacity(0.5),
               blurRadius: 20,
             ),
         ],
@@ -764,7 +876,10 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
               child: Container(
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: Colors.black.withOpacity(0.05), width: 1),
+                  border: Border.all(
+                    color: Colors.black.withOpacity(0.05),
+                    width: 1,
+                  ),
                 ),
               ),
             ),
@@ -807,7 +922,9 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
                 decoration: BoxDecoration(
                   color: Colors.white,
                   border: Border.all(color: Colors.black, width: 2),
-                  boxShadow: const [BoxShadow(color: Colors.black, offset: Offset(2, 2))],
+                  boxShadow: const [
+                    BoxShadow(color: Colors.black, offset: Offset(2, 2)),
+                  ],
                 ),
                 child: Text(
                   tile.subLabel!,
@@ -827,13 +944,17 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
               opacity: 0.3,
               child: Row(
                 children: List.generate(
-                    3,
-                    (i) => Container(
-                          width: 4,
-                          height: 4,
-                          margin: const EdgeInsets.only(left: 2),
-                          decoration: const BoxDecoration(color: Colors.black, shape: BoxShape.circle),
-                        )),
+                  3,
+                  (i) => Container(
+                    width: 4,
+                    height: 4,
+                    margin: const EdgeInsets.only(left: 2),
+                    decoration: const BoxDecoration(
+                      color: Colors.black,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                ),
               ),
             ),
           ),
@@ -871,8 +992,22 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(label, style: const TextStyle(fontSize: 10, color: Colors.black54, fontWeight: FontWeight.bold)),
-            Text(value, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w900, color: Colors.black)),
+            Text(
+              label,
+              style: const TextStyle(
+                fontSize: 10,
+                color: Colors.black54,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            Text(
+              value,
+              style: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w900,
+                color: Colors.black,
+              ),
+            ),
           ],
         ),
       ],
@@ -922,12 +1057,18 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
         children: [
           Text(
             label,
-            style: GoogleFonts.poppins(fontSize: 9, fontWeight: FontWeight.w900),
+            style: GoogleFonts.poppins(
+              fontSize: 9,
+              fontWeight: FontWeight.w900,
+            ),
           ),
           const SizedBox(height: 4),
           Text(
             text,
-            style: GoogleFonts.poppins(fontSize: 11, fontWeight: FontWeight.w600),
+            style: GoogleFonts.poppins(
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+            ),
           ),
         ],
       ),
@@ -946,7 +1087,9 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
               color: Colors.white,
               borderRadius: BorderRadius.circular(30),
               border: Border.all(color: Colors.black, width: 4),
-              boxShadow: const [BoxShadow(color: Colors.black, offset: Offset(10, 10))],
+              boxShadow: const [
+                BoxShadow(color: Colors.black, offset: Offset(10, 10)),
+              ],
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -959,21 +1102,35 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
                     shape: BoxShape.circle,
                     border: Border.all(color: Colors.black, width: 3),
                     boxShadow: const [
-                      BoxShadow(color: Colors.black, offset: Offset(4, 4), blurRadius: 0),
+                      BoxShadow(
+                        color: Colors.black,
+                        offset: Offset(4, 4),
+                        blurRadius: 0,
+                      ),
                     ],
                   ),
-                  child: const Icon(Icons.mic_rounded, size: 36, color: Colors.black),
+                  child: const Icon(
+                    Icons.mic_rounded,
+                    size: 36,
+                    color: Colors.black,
+                  ),
                 ),
                 const SizedBox(height: 14),
                 Text(
                   'VOICE INTERVIEW',
-                  style: GoogleFonts.poppins(fontSize: 24, fontWeight: FontWeight.w900),
+                  style: GoogleFonts.poppins(
+                    fontSize: 24,
+                    fontWeight: FontWeight.w900,
+                  ),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 8),
                 Text(
                   'Pick a resume source and start when you are ready.',
-                  style: GoogleFonts.poppins(fontSize: 13, color: Colors.grey[700]),
+                  style: GoogleFonts.poppins(
+                    fontSize: 13,
+                    color: Colors.grey[700],
+                  ),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 12),
@@ -991,12 +1148,17 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
                     children: [
                       Text(
                         'Resume Source',
-                        style: GoogleFonts.poppins(fontWeight: FontWeight.w900, fontSize: 13),
+                        style: GoogleFonts.poppins(
+                          fontWeight: FontWeight.w900,
+                          fontSize: 13,
+                        ),
                       ),
                       const SizedBox(height: 8),
                       _buildResumeOption(
                         title: 'Profile Resume',
-                        subtitle: _hasResume ? 'Saved in profile' : 'Not uploaded yet',
+                        subtitle: _hasResume
+                            ? 'Saved in profile'
+                            : 'Not uploaded yet',
                         selected: _resumeSource == 'profile',
                         statusColor: _hasResume ? Colors.green : Colors.orange,
                         onTap: () => setState(() => _resumeSource = 'profile'),
@@ -1004,7 +1166,8 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
                       const SizedBox(height: 6),
                       _buildResumeOption(
                         title: 'Upload New',
-                        subtitle: _resumeFileName ?? 'PDF or DOCX (this session)',
+                        subtitle:
+                            _resumeFileName ?? 'PDF or DOCX (this session)',
                         selected: _resumeSource == 'upload',
                         statusColor: const Color(0xFF64B5F6),
                         onTap: () => setState(() => _resumeSource = 'upload'),
@@ -1012,7 +1175,11 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
                       const SizedBox(height: 10),
                       if (_resumeSource == 'profile') ...[
                         if (_isResumeUploading)
-                          const Center(child: CircularProgressIndicator(color: Colors.black))
+                          const Center(
+                            child: CircularProgressIndicator(
+                              color: Colors.black,
+                            ),
+                          )
                         else if (!_hasResume)
                           ElevatedButton.icon(
                             onPressed: _pickAndUploadResume,
@@ -1022,8 +1189,13 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
                               backgroundColor: Colors.white,
                               foregroundColor: Colors.black,
                               minimumSize: const Size(double.infinity, 44),
-                              side: const BorderSide(color: Colors.black, width: 2),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              side: const BorderSide(
+                                color: Colors.black,
+                                width: 2,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
                             ),
                           )
                         else
@@ -1034,12 +1206,24 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
                               Expanded(
                                 child: Text(
                                   'Resume saved in profile',
-                                  style: const TextStyle(fontWeight: FontWeight.bold, overflow: TextOverflow.ellipsis, fontSize: 13),
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    overflow: TextOverflow.ellipsis,
+                                    fontSize: 13,
+                                  ),
                                 ),
                               ),
                               TextButton(
                                 onPressed: _pickAndUploadResume,
-                                child: const Text('REPLACE', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold, decoration: TextDecoration.underline, fontSize: 12)),
+                                child: const Text(
+                                  'REPLACE',
+                                  style: TextStyle(
+                                    color: Colors.black,
+                                    fontWeight: FontWeight.bold,
+                                    decoration: TextDecoration.underline,
+                                    fontSize: 12,
+                                  ),
+                                ),
                               ),
                             ],
                           ),
@@ -1052,8 +1236,13 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
                             backgroundColor: Colors.white,
                             foregroundColor: Colors.black,
                             minimumSize: const Size(double.infinity, 44),
-                            side: const BorderSide(color: Colors.black, width: 2),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            side: const BorderSide(
+                              color: Colors.black,
+                              width: 2,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
                           ),
                         ),
                       ],
@@ -1064,35 +1253,46 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
                 const SizedBox(height: 14),
 
                 ElevatedButton(
-                  onPressed: (_resumeSource == 'profile' && _hasResume) ||
+                  onPressed:
+                      (_resumeSource == 'profile' && _hasResume) ||
                           (_resumeSource == 'upload' && _resumePath != null)
                       ? _startInterview
                       : null,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: ((_resumeSource == 'profile' && _hasResume) ||
+                    backgroundColor:
+                        ((_resumeSource == 'profile' && _hasResume) ||
                             (_resumeSource == 'upload' && _resumePath != null))
                         ? const Color(0xFF40FFA7)
                         : Colors.grey[300],
                     foregroundColor: Colors.black,
                     minimumSize: const Size(double.infinity, 56),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20), side: const BorderSide(color: Colors.black, width: 3)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                      side: const BorderSide(color: Colors.black, width: 3),
+                    ),
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(((_resumeSource == 'profile' && _hasResume) ||
-                              (_resumeSource == 'upload' && _resumePath != null))
-                          ? Icons.play_arrow
-                          : Icons.lock_outline),
+                      Icon(
+                        ((_resumeSource == 'profile' && _hasResume) ||
+                                (_resumeSource == 'upload' &&
+                                    _resumePath != null))
+                            ? Icons.play_arrow
+                            : Icons.lock_outline,
+                      ),
                       const SizedBox(width: 8),
                       Flexible(
                         child: Text(
                           ((_resumeSource == 'profile' && _hasResume) ||
-                                  (_resumeSource == 'upload' && _resumePath != null))
+                                  (_resumeSource == 'upload' &&
+                                      _resumePath != null))
                               ? 'START INTERVIEW'
                               : 'SELECT RESUME TO START',
                           style: GoogleFonts.poppins(
-                            fontSize: MediaQuery.of(context).size.width < 380 ? 13 : 15,
+                            fontSize: MediaQuery.of(context).size.width < 380
+                                ? 13
+                                : 15,
                             fontWeight: FontWeight.w900,
                           ),
                           textAlign: TextAlign.center,
@@ -1108,7 +1308,6 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
       ),
     );
   }
-
 
   Widget _buildResumeOption({
     required String title,
@@ -1145,11 +1344,17 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(title, style: GoogleFonts.poppins(fontWeight: FontWeight.w900)),
+                  Text(
+                    title,
+                    style: GoogleFonts.poppins(fontWeight: FontWeight.w900),
+                  ),
                   const SizedBox(height: 4),
                   Text(
                     subtitle,
-                    style: GoogleFonts.poppins(fontSize: 12, color: Colors.black54),
+                    style: GoogleFonts.poppins(
+                      fontSize: 12,
+                      color: Colors.black54,
+                    ),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -1186,11 +1391,20 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(30),
                 border: Border.all(color: Colors.black, width: 4),
-                boxShadow: const [BoxShadow(color: Colors.black, offset: Offset(8, 8))],
+                boxShadow: const [
+                  BoxShadow(color: Colors.black, offset: Offset(8, 8)),
+                ],
               ),
               child: Column(
                 children: [
-                  Text('INTERVIEW FEEDBACK', style: GoogleFonts.poppins(fontWeight: FontWeight.w900, fontSize: 16, letterSpacing: 2)),
+                  Text(
+                    'INTERVIEW FEEDBACK',
+                    style: GoogleFonts.poppins(
+                      fontWeight: FontWeight.w900,
+                      fontSize: 16,
+                      letterSpacing: 2,
+                    ),
+                  ),
                   const SizedBox(height: 32),
                   Stack(
                     alignment: Alignment.center,
@@ -1202,10 +1416,18 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
                           value: (f['score'] ?? 0) / 100,
                           strokeWidth: 16,
                           backgroundColor: Colors.grey[200],
-                          valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF81C784)),
+                          valueColor: const AlwaysStoppedAnimation<Color>(
+                            Color(0xFF81C784),
+                          ),
                         ),
                       ),
-                      Text('${f['score']}%', style: GoogleFonts.poppins(fontSize: 40, fontWeight: FontWeight.w900)),
+                      Text(
+                        '${f['score']}%',
+                        style: GoogleFonts.poppins(
+                          fontSize: 40,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
                     ],
                   ),
                   const SizedBox(height: 40),
@@ -1221,9 +1443,14 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
                       backgroundColor: Colors.black,
                       foregroundColor: Colors.white,
                       minimumSize: const Size(double.infinity, 64),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20),
+                      ),
                     ),
-                    child: Text('RETURN TO DASHBOARD', style: GoogleFonts.poppins(fontWeight: FontWeight.w900)),
+                    child: Text(
+                      'RETURN TO DASHBOARD',
+                      style: GoogleFonts.poppins(fontWeight: FontWeight.w900),
+                    ),
                   ),
                 ],
               ),
@@ -1241,9 +1468,23 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(title.toUpperCase(), style: GoogleFonts.poppins(fontWeight: FontWeight.w900, fontSize: 13, color: Colors.black)),
+          Text(
+            title.toUpperCase(),
+            style: GoogleFonts.poppins(
+              fontWeight: FontWeight.w900,
+              fontSize: 13,
+              color: Colors.black,
+            ),
+          ),
           const SizedBox(height: 8),
-          Text(content.toString(), style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.w500, height: 1.5)),
+          Text(
+            content.toString(),
+            style: GoogleFonts.poppins(
+              fontSize: 15,
+              fontWeight: FontWeight.w500,
+              height: 1.5,
+            ),
+          ),
         ],
       ),
     );
