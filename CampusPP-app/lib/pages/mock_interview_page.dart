@@ -875,26 +875,32 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
             ),
           ),
 
-          Positioned(
-            top: 0,
-            left: 12,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              decoration: const BoxDecoration(
-                color: Colors.black,
-                borderRadius: BorderRadius.vertical(bottom: Radius.circular(8)),
-              ),
-              child: Text(
-                tile.label,
-                style: GoogleFonts.poppins(
-                  fontSize: 7,
-                  fontWeight: FontWeight.w900,
-                  color: Colors.white,
-                  letterSpacing: 1.1,
+          if (tile.label.startsWith('LIVEFEED'))
+            Positioned(
+              top: 0,
+              left: 12,
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
+                decoration: const BoxDecoration(
+                  color: Colors.black,
+                  borderRadius: BorderRadius.vertical(
+                    bottom: Radius.circular(8),
+                  ),
+                ),
+                child: Text(
+                  tile.label,
+                  style: GoogleFonts.poppins(
+                    fontSize: 7,
+                    fontWeight: FontWeight.w900,
+                    color: Colors.white,
+                    letterSpacing: 1.1,
+                  ),
                 ),
               ),
             ),
-          ),
 
           if (tile.subLabel != null)
             Positioned(
