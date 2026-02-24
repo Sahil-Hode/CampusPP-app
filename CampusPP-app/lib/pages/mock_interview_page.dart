@@ -58,6 +58,7 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
   StreamSubscription? _transcriptionSub;
   StreamSubscription? _feedbackSub;
   StreamSubscription? _recordSub;
+  final ScrollController _pageScrollController = ScrollController();
 
   @override
   void initState() {
@@ -501,6 +502,7 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
     _recorder.dispose();
     _audioPlayer.dispose();
     _cameraController?.dispose();
+    _pageScrollController.dispose();
     super.dispose();
   }
 
@@ -551,206 +553,187 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
       body: SafeArea(
         child: LayoutBuilder(
           builder: (context, constraints) {
-            return Column(
-              children: [
-                // 1. Main speaker + 3 passive tiles
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16.0,
-                      vertical: 8.0,
-                    ),
-                    child: Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Colors.transparent,
-                        borderRadius: BorderRadius.circular(22),
-                        border: Border.all(color: Colors.black, width: 3),
-                      ),
-                      child: Column(
-                        children: [
-                          Expanded(
-                            flex: 7,
-                            child: _buildMeetingTile(
-                              tile: activeTile,
-                              isActive: true,
+            return SingleChildScrollView(
+              controller: _pageScrollController,
+              child: Column(
+                children: [
+                  SizedBox(
+                    height: constraints.maxHeight,
+                    child: Column(
+                      children: [
+                        // 1. Main speaker + 3 passive tiles
+                        Expanded(
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16.0,
+                              vertical: 8.0,
                             ),
-                          ),
-                          const SizedBox(height: 10),
-                          Expanded(
-                            flex: 2,
-                            child: Row(
-                              children: [
-                                for (
-                                  int i = 0;
-                                  i < passiveTiles.length;
-                                  i++
-                                ) ...[
-                                  Expanded(
-                                    child: _buildMeetingTile(
-                                      tile: passiveTiles[i],
-                                      isActive: false,
-                                    ),
-                                  ),
-                                  if (i != passiveTiles.length - 1)
-                                    const SizedBox(width: 10),
-                                ],
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-
-                const SizedBox(height: 8),
-
-                if (_showChat)
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
-                    child: Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: Colors.black, width: 2.5),
-                        boxShadow: const [
-                          BoxShadow(color: Colors.black, offset: Offset(3, 3)),
-                        ],
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'LIVE TRANSCRIPT',
-                            style: GoogleFonts.poppins(
-                              fontSize: 10,
-                              fontWeight: FontWeight.w900,
-                              letterSpacing: 1.1,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          _buildTranscriptRow(
-                            label:
-                                _currentInterviewer?.name.toUpperCase() ??
-                                'INTERVIEWER',
-                            text: _currentText.isEmpty ? '...' : _currentText,
-                            isUser: false,
-                          ),
-                          const SizedBox(height: 6),
-                          _buildTranscriptRow(
-                            label: _profile?.name.toUpperCase() ?? 'YOU',
-                            text: _userTranscription.isEmpty
-                                ? '...'
-                                : _userTranscription,
-                            isUser: true,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-
-                // 2. Control Dock (Floating Neobrutalist)
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 10,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(24),
-                      border: Border.all(color: Colors.black, width: 3),
-                      boxShadow: const [
-                        BoxShadow(color: Colors.black, offset: Offset(4, 4)),
-                      ],
-                    ),
-                    child: LayoutBuilder(
-                      builder: (context, constraints) {
-                        final isNarrow = constraints.maxWidth < 360;
-                        return SingleChildScrollView(
-                          scrollDirection: Axis.horizontal,
-                          child: Row(
-                            children: [
-                              _buildControlCircle(
-                                icon: _isListening ? Icons.mic : Icons.mic_off,
-                                color: _isListening
-                                    ? const Color(0xFF81C784)
-                                    : const Color(0xFFFF8B94),
-                                onTap: _toggleListening,
-                                size: isNarrow ? 40 : 46,
-                                iconSize: isNarrow ? 18 : 22,
-                              ),
-                              const SizedBox(width: 8),
-                              _buildControlCircle(
-                                icon: _isCameraOff
-                                    ? Icons.videocam_off
-                                    : Icons.videocam,
-                                color: _isCameraOff
-                                    ? const Color(0xFFFF8B94)
-                                    : const Color(0xFFBBDEFB),
-                                onTap: _toggleCamera,
-                                size: isNarrow ? 40 : 46,
-                                iconSize: isNarrow ? 18 : 22,
-                              ),
-                              const SizedBox(width: 8),
-                              _buildControlCircle(
-                                icon: Icons.chat_bubble_outline,
-                                color: Colors.grey[200]!,
-                                onTap: () =>
-                                    setState(() => _showChat = !_showChat),
-                                size: isNarrow ? 40 : 46,
-                                iconSize: isNarrow ? 18 : 22,
-                              ),
-                              const SizedBox(width: 8),
-                              _buildControlCircle(
-                                icon: Icons.auto_fix_high,
-                                color: Colors.grey[200]!,
-                                onTap: () {},
-                                size: isNarrow ? 40 : 46,
-                                iconSize: isNarrow ? 18 : 22,
-                              ),
-                              const SizedBox(width: 10),
-                              SizedBox(
-                                height: isNarrow ? 40 : 46,
-                                child: ElevatedButton(
-                                  onPressed: _endInterview,
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.red,
-                                    foregroundColor: Colors.white,
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 12,
-                                    ),
-                                    minimumSize: const Size(56, 40),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(12),
-                                      side: const BorderSide(
-                                        color: Colors.black,
-                                        width: 2.5,
-                                      ),
-                                    ),
-                                    elevation: 4,
-                                    shadowColor: Colors.black,
-                                  ),
-                                  child: Text(
-                                    'END',
-                                    style: GoogleFonts.poppins(
-                                      fontWeight: FontWeight.w900,
-                                      fontSize: isNarrow ? 12 : 13,
-                                    ),
-                                  ),
+                            child: Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: Colors.transparent,
+                                borderRadius: BorderRadius.circular(22),
+                                border: Border.all(
+                                  color: Colors.black,
+                                  width: 3,
                                 ),
                               ),
-                            ],
+                              child: Column(
+                                children: [
+                                  Expanded(
+                                    flex: 7,
+                                    child: _buildMeetingTile(
+                                      tile: activeTile,
+                                      isActive: true,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 10),
+                                  Expanded(
+                                    flex: 2,
+                                    child: Row(
+                                      children: [
+                                        for (
+                                          int i = 0;
+                                          i < passiveTiles.length;
+                                          i++
+                                        ) ...[
+                                          Expanded(
+                                            child: _buildMeetingTile(
+                                              tile: passiveTiles[i],
+                                              isActive: false,
+                                            ),
+                                          ),
+                                          if (i != passiveTiles.length - 1)
+                                            const SizedBox(width: 10),
+                                        ],
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
                           ),
-                        );
-                      },
+                        ),
+
+                        const SizedBox(height: 8),
+
+                        // 2. Control Dock (Floating Neobrutalist)
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 10,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(24),
+                              border: Border.all(color: Colors.black, width: 3),
+                              boxShadow: const [
+                                BoxShadow(
+                                  color: Colors.black,
+                                  offset: Offset(4, 4),
+                                ),
+                              ],
+                            ),
+                            child: LayoutBuilder(
+                              builder: (context, constraints) {
+                                final isNarrow = constraints.maxWidth < 360;
+                                return SingleChildScrollView(
+                                  scrollDirection: Axis.horizontal,
+                                  child: Row(
+                                    children: [
+                                      _buildControlCircle(
+                                        icon: _isListening
+                                            ? Icons.mic
+                                            : Icons.mic_off,
+                                        color: _isListening
+                                            ? const Color(0xFF81C784)
+                                            : const Color(0xFFFF8B94),
+                                        onTap: _toggleListening,
+                                        size: isNarrow ? 40 : 46,
+                                        iconSize: isNarrow ? 18 : 22,
+                                      ),
+                                      const SizedBox(width: 8),
+                                      _buildControlCircle(
+                                        icon: _isCameraOff
+                                            ? Icons.videocam_off
+                                            : Icons.videocam,
+                                        color: _isCameraOff
+                                            ? const Color(0xFFFF8B94)
+                                            : const Color(0xFFBBDEFB),
+                                        onTap: _toggleCamera,
+                                        size: isNarrow ? 40 : 46,
+                                        iconSize: isNarrow ? 18 : 22,
+                                      ),
+                                      const SizedBox(width: 8),
+                                      _buildControlCircle(
+                                        icon: _showChat
+                                            ? Icons.close
+                                            : Icons.chat_bubble_outline,
+                                        color: _showChat
+                                            ? Colors.red
+                                            : Colors.grey[200]!,
+                                        iconColor: _showChat
+                                            ? Colors.white
+                                            : Colors.black,
+                                        onTap: _toggleChatPanel,
+                                        size: isNarrow ? 40 : 46,
+                                        iconSize: isNarrow ? 18 : 22,
+                                      ),
+                                      const SizedBox(width: 8),
+                                      _buildControlCircle(
+                                        icon: Icons.auto_fix_high,
+                                        color: Colors.grey[200]!,
+                                        onTap: () {},
+                                        size: isNarrow ? 40 : 46,
+                                        iconSize: isNarrow ? 18 : 22,
+                                      ),
+                                      const SizedBox(width: 10),
+                                      SizedBox(
+                                        height: isNarrow ? 40 : 46,
+                                        child: ElevatedButton(
+                                          onPressed: _endInterview,
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: Colors.red,
+                                            foregroundColor: Colors.white,
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 12,
+                                            ),
+                                            minimumSize: const Size(56, 40),
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(12),
+                                              side: const BorderSide(
+                                                color: Colors.black,
+                                                width: 2.5,
+                                              ),
+                                            ),
+                                            elevation: 4,
+                                            shadowColor: Colors.black,
+                                          ),
+                                          child: Text(
+                                            'END',
+                                            style: GoogleFonts.poppins(
+                                              fontWeight: FontWeight.w900,
+                                              fontSize: isNarrow ? 12 : 13,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                ),
-              ],
+                  if (_showChat) _buildTranscriptPanel(),
+                ],
+              ),
             );
           },
         ),
@@ -1018,6 +1001,7 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
     required IconData icon,
     required Color color,
     required VoidCallback onTap,
+    Color iconColor = Colors.black,
     double size = 46,
     double iconSize = 24,
   }) {
@@ -1035,7 +1019,66 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
             BoxShadow(color: Colors.black, offset: Offset(3, 3)),
           ],
         ),
-        child: Icon(icon, color: Colors.black, size: iconSize),
+        child: Icon(icon, color: iconColor, size: iconSize),
+      ),
+    );
+  }
+
+  void _toggleChatPanel() {
+    setState(() => _showChat = !_showChat);
+
+    if (_showChat) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (_pageScrollController.hasClients) {
+          _pageScrollController.animateTo(
+            _pageScrollController.position.maxScrollExtent,
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeOut,
+          );
+        }
+      });
+    }
+  }
+
+  Widget _buildTranscriptPanel() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+      child: Container(
+        constraints: const BoxConstraints(minHeight: 220),
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.black, width: 2.5),
+          boxShadow: const [
+            BoxShadow(color: Colors.black, offset: Offset(3, 3)),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'LIVE TRANSCRIPT',
+              style: GoogleFonts.poppins(
+                fontSize: 10,
+                fontWeight: FontWeight.w900,
+                letterSpacing: 1.1,
+              ),
+            ),
+            const SizedBox(height: 8),
+            _buildTranscriptRow(
+              label: _currentInterviewer?.name.toUpperCase() ?? 'INTERVIEWER',
+              text: _currentText.isEmpty ? '...' : _currentText,
+              isUser: false,
+            ),
+            const SizedBox(height: 6),
+            _buildTranscriptRow(
+              label: _profile?.name.toUpperCase() ?? 'YOU',
+              text: _userTranscription.isEmpty ? '...' : _userTranscription,
+              isUser: true,
+            ),
+          ],
+        ),
       ),
     );
   }
