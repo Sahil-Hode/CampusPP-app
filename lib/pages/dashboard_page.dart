@@ -22,6 +22,7 @@ import 'mock_interview_page.dart';
 import '../widgets/quiz_overview_card.dart';
 import '../services/quiz_service.dart';
 import '../models/quiz_model.dart';
+import 'ar_viewer_page.dart';
 
 
 import '../models/student_profile_model.dart';
@@ -430,6 +431,14 @@ class _DashboardPageState extends State<DashboardPage> {
                           label: '3D Mentor',
                           color: const Color(0xFFA8E6CF),
                           onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const ThreeDMentorPage())),
+                          useGridSizing: true,
+                        ),
+                        _buildQuickActionButton(
+                          context,
+                          icon: Icons.camera_alt_outlined,
+                          label: 'AR Models',
+                          color: const Color(0xFFC5CAE9),
+                          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const ARViewerPage())),
                           useGridSizing: true,
                         ),
                         _buildQuickActionButton(
