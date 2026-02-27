@@ -248,7 +248,7 @@ class _ThreeDMentorPageState extends State<ThreeDMentorPage> {
           Positioned.fill(
             child: ModelViewer(
               // Using user provided model (renamed)
-              src: 'assets/models/64f1a714fe61576b46f27ca2.glb',
+              src: 'assets/models/avatar_animated.glb',
               alt: '3D Mentor',
               ar: true,
               autoRotate: false, 
