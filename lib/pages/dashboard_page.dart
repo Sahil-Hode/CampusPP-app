@@ -784,6 +784,21 @@ class _DashboardPageState extends State<DashboardPage> {
                   ),
                 ),
               ),
+              // URGENCY STATUS BADGE
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: urgencyColor,
+                  border: Border.all(color: Colors.black, width: 2),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: Column(
+                  children: [
+                    const Text('URGENCY', style: TextStyle(fontSize: 8, fontWeight: FontWeight.w900, letterSpacing: 0.5)),
+                    Text(c.urgency.toUpperCase(), style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w900)),
+                  ],
+                ),
+              ),
             ],
           ),
         ),
