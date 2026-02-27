@@ -8,12 +8,11 @@ import 'package:http_parser/http_parser.dart';
 class StudentService {
   static const String _baseUrl = 'https://campuspp-f7qx.onrender.com/api';
 
-  static Future<PerformanceData> getPerformance() async {
+  static Future<Map<String, dynamic>> getPerformanceRaw() async {
     final token = await AuthService.getToken();
     if (token == null) throw Exception('No token found');
 
     final url = '$_baseUrl/student/performance?t=${DateTime.now().millisecondsSinceEpoch}';
-    print('Fetching Performance: $url');
     final response = await http.get(
       Uri.parse(url),
       headers: {
@@ -22,20 +21,40 @@ class StudentService {
       },
     );
 
-    print('Get Performance Status: ${response.statusCode}');
-    print('Get Performance Body: ${response.body}');
-
     if (response.statusCode == 200) {
       final json = jsonDecode(response.body);
-      if (json['success'] == true && json['data'] != null && json['data']['currentPerformance'] != null) {
-        return PerformanceData.fromJson(json['data']['currentPerformance']);
-      } else {
-        throw Exception('Invalid data structure');
+      if (json['success'] == true && json['data'] != null) {
+        return json['data'];
       }
-    } else {
-      throw Exception('Failed to load performance data');
     }
+    throw Exception('Failed to load raw performance data');
   }
+
+  // ─── NEW PREDICTIVE LAYERS (B) ────────────────────────────────────────────────────────
+
+  static Future<Map<String, dynamic>> _fetchRawLayer(String path) async {
+    final token = await AuthService.getToken();
+    if (token == null) throw Exception('No token found');
+
+    final url = '$_baseUrl/student/performance/$path?t=${DateTime.now().millisecondsSinceEpoch}';
+    final response = await http.get(Uri.parse(url), headers: {'Authorization': 'Bearer $token', 'Accept': 'application/json'});
+    
+    if (response.statusCode == 200) {
+      final json = jsonDecode(response.body);
+      if (json['success'] == true && json['data'] != null) return json['data'];
+    }
+    throw Exception('Failed to load layer: $path');
+  }
+
+  static Future<Map<String, dynamic>> getMyPredictiveAnalysis() => _fetchRawLayer('predictive');
+  static Future<Map<String, dynamic>> getMyStability() => _fetchRawLayer('stability');
+  static Future<Map<String, dynamic>> getMyTrendAnalysis() => _fetchRawLayer('trend-analysis');
+  static Future<Map<String, dynamic>> getMyRiskBreakdown() => _fetchRawLayer('risk-breakdown');
+  static Future<Map<String, dynamic>> getMyImpactSimulator() => _fetchRawLayer('impact-simulator');
+  static Future<Map<String, dynamic>> getMyActionPlan() => _fetchRawLayer('action-plan');
+  static Future<Map<String, dynamic>> getMySmartAlert() => _fetchRawLayer('alert');
+
+  // ─── EXISTING ENHANCED (C) ────────────────────────────────────────────────────────
 
   static Future<RiskData> getRiskStatus() async {
     final token = await AuthService.getToken();
@@ -148,7 +167,7 @@ class StudentService {
     final token = await AuthService.getToken();
     if (token == null) throw Exception('No token found');
 
-    final url = '$_baseUrl/student/performance?t=${DateTime.now().millisecondsSinceEpoch}';
+    final url = '$_baseUrl/student/performance/overview?t=${DateTime.now().millisecondsSinceEpoch}';
     print('Fetching Overview: $url');
     final response = await http.get(
       Uri.parse(url),
@@ -162,13 +181,20 @@ class StudentService {
       final json = jsonDecode(response.body);
       print('Overview Response: ${response.body}');
       if (json['success'] == true && json['data'] != null) {
-         var perf = json['data']['currentPerformance'] ?? {};
-         return OverviewData.fromJson(perf);
+        final raw = json['data'] as Map<String, dynamic>;
+        // Merge currentPerformance metrics + top-level predictiveSummary + riskLevel
+        final perf = raw['currentPerformance'] as Map<String, dynamic>? ?? raw;
+        final merged = <String, dynamic>{
+          ...perf,
+          'riskLevel': raw['riskLevel'] ?? perf['riskLevel'] ?? 'Unknown',
+          'predictiveSummary': raw['predictiveSummary'] ?? {},
+        };
+        return OverviewData.fromJson(merged);
       } else {
         throw Exception('Invalid data structure');
       }
     } else {
-      throw Exception('Failed to load overview');
+      throw Exception('Failed to load overview: ${response.statusCode}');
     }
   }
 
@@ -277,6 +303,32 @@ class StudentService {
       }
     } else {
       throw Exception('Failed to load predictive analysis');
+    }
+  }
+
+  static Future<CouncilDecisionData> getCouncilData() async {
+    final token = await AuthService.getToken();
+    if (token == null) throw Exception('No token found');
+
+    final url = '$_baseUrl/ai-council?t=${DateTime.now().millisecondsSinceEpoch}';
+    print('Fetching AI Council: $url');
+    final response = await http.get(
+      Uri.parse(url),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Accept': 'application/json',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      final json = jsonDecode(response.body);
+      if (json['success'] == true && json['data'] != null) {
+        return CouncilDecisionData.fromJson(json['data']);
+      } else {
+        throw Exception('Invalid data structure for council');
+      }
+    } else {
+      throw Exception('Failed to load council data: ${response.statusCode}');
     }
   }
 

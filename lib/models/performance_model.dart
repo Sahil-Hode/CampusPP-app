@@ -85,9 +85,11 @@ class TrendsData {
   });
 
   factory TrendsData.fromJson(Map<String, dynamic> json) {
+    final tr = json['trendAnalysis'] as Map<String, dynamic>? ?? {};
+    final activeTrend = tr['trend']?.toString() ?? json['dbTrend']?.toString() ?? json['trends']?.toString() ?? 'Stable';
     return TrendsData(
-      trends: json['trends'] ?? 'Unknown',
-      analysisDate: json['analysisDate'] ?? '',
+      trends: activeTrend,
+      analysisDate: json['analysisDate']?.toString() ?? '',
       totalAnalyses: json['totalAnalyses'] ?? 0,
     );
   }
@@ -113,22 +115,107 @@ class RecommendationsData {
   }
 }
 
+class SmartAlertData {
+  final String level;
+  final String message;
+  final String icon;
+  final String color;
+
+  SmartAlertData({
+    required this.level,
+    required this.message,
+    required this.icon,
+    required this.color,
+  });
+
+  factory SmartAlertData.fromJson(Map<String, dynamic> json) {
+    return SmartAlertData(
+      level: json['level']?.toString() ?? 'Safe',
+      message: json['message']?.toString() ?? '',
+      icon: json['icon']?.toString() ?? '',
+      color: json['color']?.toString() ?? '',
+    );
+  }
+}
+
+class PredictiveSummaryData {
+  final int stabilityScore;
+  final int failureProbability;
+  final String trend;
+  final String trendDirection;
+  final SmartAlertData smartAlert;
+
+  PredictiveSummaryData({
+    required this.stabilityScore,
+    required this.failureProbability,
+    required this.trend,
+    required this.trendDirection,
+    required this.smartAlert,
+  });
+
+  factory PredictiveSummaryData.fromJson(Map<String, dynamic> json) {
+    return PredictiveSummaryData(
+      stabilityScore: (json['stabilityScore'] as num?)?.toInt() ?? 0,
+      failureProbability: (json['failureProbability'] as num?)?.toInt() ?? 0,
+      trend: json['trend']?.toString() ?? 'Stable',
+      trendDirection: json['trendDirection']?.toString() ?? 'stable',
+      smartAlert: SmartAlertData.fromJson(json['smartAlert'] ?? {}),
+    );
+  }
+}
+
 class OverviewData {
   final String riskLevel;
-  final int overallScore;
   final int attendance;
+  final int internalMarks;
+  final int assignmentScore;
+  final int lmsEngagement;
+  final PredictiveSummaryData predictiveSummary;
 
   OverviewData({
     required this.riskLevel,
-    required this.overallScore,
     required this.attendance,
+    required this.internalMarks,
+    required this.assignmentScore,
+    required this.lmsEngagement,
+    required this.predictiveSummary,
   });
 
   factory OverviewData.fromJson(Map<String, dynamic> json) {
     return OverviewData(
       riskLevel: json['riskLevel']?.toString() ?? 'Unknown',
-      overallScore: (double.tryParse((json['overallScore'] ?? json['score'] ?? 0).toString()) ?? 0).toInt(),
-      attendance: (double.tryParse((json['attendance'] ?? 0).toString()) ?? 0).toInt(),
+      attendance: (json['attendance'] as num?)?.toInt() ?? 0,
+      internalMarks: (json['internalMarks'] as num?)?.toInt() ?? 0,
+      assignmentScore: (json['assignmentScore'] as num?)?.toInt() ?? 0,
+      lmsEngagement: (json['lmsEngagement'] as num?)?.toInt() ?? 0,
+      predictiveSummary: PredictiveSummaryData.fromJson(json['predictiveSummary'] ?? {}),
+    );
+  }
+}
+
+class CouncilDecisionData {
+  final String priorityFocusArea;
+  final String urgency;       // mapped from urgencyLevel
+  final String summary;       // mapped from overallSummary
+  final String recommendedAction;
+  final String riskSentence;
+
+  CouncilDecisionData({
+    required this.priorityFocusArea,
+    required this.urgency,
+    required this.summary,
+    required this.recommendedAction,
+    required this.riskSentence,
+  });
+
+  factory CouncilDecisionData.fromJson(Map<String, dynamic> json) {
+    var council = json['councilDecision'] ?? json;
+    return CouncilDecisionData(
+      priorityFocusArea: council['priorityFocusArea']?.toString() ?? '',
+      urgency: council['urgencyLevel']?.toString() ?? council['urgency']?.toString() ?? 'Low',
+      summary: council['overallSummary']?.toString() ?? council['summary']?.toString() ?? '',
+      recommendedAction: council['recommendedAction']?.toString() ?? '',
+      riskSentence: council['riskSentence']?.toString() ?? '',
     );
   }
 }

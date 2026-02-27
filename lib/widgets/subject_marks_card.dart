@@ -48,7 +48,7 @@ class OverviewCard extends StatelessWidget {
                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.w900, letterSpacing: 1.0)
                      ),
                      Text(
-                       '${overview.overallScore}%',
+                       '${overview.predictiveSummary.stabilityScore}%',
                        style: const TextStyle(fontSize: 32, fontWeight: FontWeight.w900, height: 1.1),
                      ),
                    ],
