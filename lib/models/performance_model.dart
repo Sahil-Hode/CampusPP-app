@@ -71,6 +71,16 @@ class ScoreBreakdown {
       lmsEngagement: (double.tryParse((json['lmsEngagement'] ?? 0).toString()) ?? 0).toInt(),
     );
   }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'attendance': attendance,
+      'internalMarks': internalMarks,
+      'assignmentScore': assignmentScore,
+      'overallScore': overallScore,
+      'lmsEngagement': lmsEngagement,
+    };
+  }
 }
 
 class TrendsData {

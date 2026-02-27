@@ -53,6 +53,9 @@ dependencies:
   image_picker: ^1.2.1
   image: ^4.8.0
   http_parser: ^4.1.2
+  flutter_inappwebview: ^6.1.5
+  googleapis_auth: ^2.0.0
+  url_launcher: ^6.3.2
 
 dev_dependencies:
   flutter_test:
@@ -80,6 +83,8 @@ flutter:
   assets:
     - assets/models/
     - assets/logo.jpeg
+    - assets/html-model/
+    - assets/html-model/ASSETS/
 
 flutter_launcher_icons:
   android: true

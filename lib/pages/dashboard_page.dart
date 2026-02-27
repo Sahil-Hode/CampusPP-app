@@ -23,6 +23,7 @@ import '../widgets/quiz_overview_card.dart';
 import '../services/quiz_service.dart';
 import '../models/quiz_model.dart';
 import 'ar_viewer_page.dart';
+import 'vr_interview_page.dart';
 
 
 import '../models/student_profile_model.dart';
@@ -439,6 +440,14 @@ class _DashboardPageState extends State<DashboardPage> {
                           label: 'AR Models',
                           color: const Color(0xFFC5CAE9),
                           onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const ARViewerPage())),
+                          useGridSizing: true,
+                        ),
+                        _buildQuickActionButton(
+                          context,
+                          icon: Icons.vrpano_outlined,
+                          label: 'VR Interview',
+                          color: const Color(0xFFE1BEE7),
+                          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const VRInterviewPage())),
                           useGridSizing: true,
                         ),
                         _buildQuickActionButton(
