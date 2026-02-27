@@ -746,8 +746,7 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
     if (_isSpeaking && _currentInterviewer != null) {
       final name = _currentInterviewer!.name.toUpperCase();
       if (name.contains('ARJUN')) return 'arjun';
-      if (name.contains('PRIYA')) return 'priya';
-      if (name.contains('VIKRAM')) return 'vikram';
+      return 'priya';
     }
     return 'user';
   }
@@ -774,13 +773,6 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
         subLabel: 'MISS PRIYA',
         color: const Color(0xFFE1BEE7),
         content: _buildAiAvatar('👩‍💻'),
-      ),
-      _ParticipantTile(
-        id: 'vikram',
-        label: 'AI_SYSTEM_03',
-        subLabel: 'MR. VIKRAM',
-        color: const Color(0xFFFFF9C4),
-        content: _buildAiAvatar('👨‍💼'),
       ),
     ];
   }

@@ -489,73 +489,85 @@ class _DashboardPageState extends State<DashboardPage> {
                     const SizedBox(height: 24),
 
                     // Quick Actions Section
-                    Align(
-                      alignment: Alignment.centerLeft,
-                      child: Text(
-                        'Quick Actions',
-                        style: GoogleFonts.poppins(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w900,
-                          color: Colors.black,
+                    Row(
+                      children: [
+                        Text(
+                          'Quick Actions',
+                          style: GoogleFonts.poppins(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w900,
+                            color: Colors.black,
+                          ),
                         ),
-                      ),
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: Colors.black,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text('5', style: GoogleFonts.poppins(fontSize: 10, fontWeight: FontWeight.w800, color: Colors.white)),
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 14),
                     GridView.count(
                       crossAxisCount: 2,
-                      mainAxisSpacing: 16,
-                      crossAxisSpacing: 16,
+                      mainAxisSpacing: 14,
+                      crossAxisSpacing: 14,
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
-                      childAspectRatio: 1.25,
+                      childAspectRatio: 1.15,
                       children: [
                         _buildQuickActionButton(
                           context,
                           icon: Icons.view_in_ar,
                           label: '3D Mentor',
-                          color: const Color(0xFFA8E6CF),
+                          subtitle: 'Interactive VR',
+                          color: const Color(0xFFB2F5EA),
+                          iconBgColor: const Color(0xFF4DDBA0),
+                          textColor: Colors.black,
                           onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const ThreeDMentorPage())),
-                          useGridSizing: true,
                         ),
                         _buildQuickActionButton(
                           context,
                           icon: Icons.camera_alt_outlined,
                           label: 'AR Models',
-                          color: const Color(0xFFC5CAE9),
+                          subtitle: 'Explore in AR',
+                          color: const Color(0xFFE8EAF6),
+                          iconBgColor: const Color(0xFF7986CB),
+                          textColor: Colors.black,
                           onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const ARViewerPage())),
-                          useGridSizing: true,
                         ),
                         _buildQuickActionButton(
                           context,
                           icon: Icons.forum_outlined,
                           label: 'Mock Interview',
-                          color: const Color(0xFFFFD3B6),
+                          subtitle: 'AI Practice',
+                          color: const Color(0xFFFFE566),
+                          iconBgColor: const Color(0xFFFFA726),
+                          textColor: Colors.black,
                           onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const MockInterviewPage())),
-                          useGridSizing: true,
                         ),
                         _buildQuickActionButton(
                           context,
                           icon: Icons.description_outlined,
-                          label: 'Resume Analyzer',
-                          color: const Color(0xFFFF8B94),
+                          label: 'Resume',
+                          subtitle: 'AI Analyzer',
+                          color: const Color(0xFFFFCDD2),
+                          iconBgColor: const Color(0xFFE57373),
+                          textColor: Colors.black,
                           onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const ResumeUploadPage())),
-                          useGridSizing: true,
                         ),
                         _buildQuickActionButton(
                           context,
                           icon: Icons.psychology_outlined,
                           label: 'Interventions',
-                          color: const Color(0xFFDCEDC1),
+                          subtitle: 'AI Coaching',
+                          color: const Color(0xFFA8E6CF),
+                          iconBgColor: const Color(0xFF2E7D55),
+                          textColor: Colors.black,
                           onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const InterventionsPage())),
-                          useGridSizing: true,
-                        ),
-                        _buildQuickActionButton(
-                          context,
-                          icon: Icons.batch_prediction_outlined,
-                          label: 'Predictive AI',
-                          color: const Color(0xFFFDEB71), // Bright Yellow
-                          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const PredictiveDashboardPage())),
-                          useGridSizing: true,
                         ),
                       ],
                     ),
@@ -765,26 +777,11 @@ class _DashboardPageState extends State<DashboardPage> {
                   'AI COUNCIL\nDIRECTIVE',
                   style: GoogleFonts.poppins(
                     fontWeight: FontWeight.w900,
-                    fontSize: 22, // Slightly larger
+                    fontSize: 22,
                     height: 1.0,
                     color: Colors.black,
                     letterSpacing: -1.0,
                   ),
-                ),
-              ),
-              // URGENCY STATUS BADGE
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                decoration: BoxDecoration(
-                  color: urgencyColor,
-                  border: Border.all(color: Colors.black, width: 2),
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                child: Column(
-                  children: [
-                    const Text('URGENCY', style: TextStyle(fontSize: 8, fontWeight: FontWeight.w900, letterSpacing: 0.5)),
-                    Text(c.urgency.toUpperCase(), style: const TextStyle(fontSize: 12, fontWeight: FontWeight.black)),
-                  ],
                 ),
               ),
             ],
@@ -829,10 +826,10 @@ class _DashboardPageState extends State<DashboardPage> {
                         const Text('FOCUS AREA', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 9, color: Colors.black54)),
                         const SizedBox(height: 4),
                         Text(
-                          c.priorityFocusArea.toUpperCase().replaceAll('ASSESSMENT', 'ASSESS...'),
-                          maxLines: 1,
+                          c.priorityFocusArea.toUpperCase(),
+                          maxLines: 2,
                           overflow: TextOverflow.ellipsis,
-                          style: GoogleFonts.poppins(fontWeight: FontWeight.w900, fontSize: 16),
+                          style: GoogleFonts.poppins(fontWeight: FontWeight.w900, fontSize: 13),
                         ),
                       ],
                     ),
@@ -903,18 +900,19 @@ class _DashboardPageState extends State<DashboardPage> {
     required String label,
     required Color color,
     required VoidCallback onTap,
-    bool useGridSizing = false,
+    String subtitle = '',
+    Color iconBgColor = Colors.white,
+    Color textColor = Colors.black,
   }) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        width: useGridSizing ? double.infinity : 100,
-        margin: useGridSizing ? EdgeInsets.zero : const EdgeInsets.only(right: 16, bottom: 8),
-        padding: const EdgeInsets.all(12),
+        width: double.infinity,
+        padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
           color: color,
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: Colors.black, width: 2),
+          border: Border.all(color: Colors.black, width: 2.5),
           boxShadow: const [
             BoxShadow(
               color: Colors.black,
@@ -924,26 +922,40 @@ class _DashboardPageState extends State<DashboardPage> {
           ],
         ),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Container(
-              padding: const EdgeInsets.all(8),
+              padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: Colors.white,
-                shape: BoxShape.circle,
-                border: Border.all(color: Colors.black, width: 1.5),
+                color: iconBgColor,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: Colors.black.withOpacity(0.15), width: 1.5),
               ),
-              child: Icon(icon, color: Colors.black, size: 24),
+              child: Icon(icon, color: Colors.black87, size: 24),
             ),
-            const SizedBox(height: 8),
-            Text(
-              label,
-              textAlign: TextAlign.center,
-              style: GoogleFonts.poppins(
-                fontSize: 10,
-                fontWeight: FontWeight.bold,
-                color: Colors.black,
-              ),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: GoogleFonts.poppins(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w800,
+                    color: textColor,
+                    height: 1.2,
+                  ),
+                ),
+                if (subtitle.isNotEmpty)
+                  Text(
+                    subtitle,
+                    style: GoogleFonts.poppins(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w600,
+                      color: textColor.withOpacity(0.65),
+                    ),
+                  ),
+              ],
             ),
           ],
         ),

@@ -154,7 +154,7 @@ class _PerformanceAnalysisPageState extends State<PerformanceAnalysisPage> {
           Container(
             width: 52, height: 52,
             decoration: BoxDecoration(
-              color: _purple,
+              color: _orange,
               shape: BoxShape.circle,
               border: Border.all(color: _black, width: 2),
             ),
@@ -205,7 +205,7 @@ class _PerformanceAnalysisPageState extends State<PerformanceAnalysisPage> {
         Expanded(
           child: Column(
             children: [
-              _MetricBlock(label: "Internal Marks", value: "${metadata['marks'] ?? 0}/100", color: _orange),
+              _MetricBlock(label: "Internal Marks", value: "${metadata['marks'] ?? 0}/100", color: _yellow),
               const SizedBox(height: 12),
               _MetricBlock(label: "LMS Engagement", value: "${metadata['lmsEngagement'] ?? 0}/100", color: _purple),
             ],
@@ -497,21 +497,32 @@ class _PerformanceAnalysisPageState extends State<PerformanceAnalysisPage> {
     final days = plan['days'] as List<dynamic>? ?? [];
     if (days.isEmpty) return const SizedBox.shrink();
 
+    final focusArea = plan['focusArea']?.toString() ?? '';
+    final riskReduction = plan['expectedRiskReduction']?.toString() ?? 'Unknown';
+
     return Container(
       decoration: brutalBox(_navy),
       child: ExpansionTile(
         collapsedIconColor: _white,
         iconColor: _white,
         title: Text("7-Day Action Plan", style: GoogleFonts.poppins(fontWeight: FontWeight.w900, color: _white)),
-        subtitle: Text("Risk Reduction: ${plan['expectedRiskReduction'] ?? 'Unknown'}",
-            style: GoogleFonts.poppins(fontWeight: FontWeight.w500, color: Colors.white70, fontSize: 11)),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (focusArea.isNotEmpty)
+              Text("Focus: $focusArea",
+                  style: GoogleFonts.poppins(fontWeight: FontWeight.w600, color: Colors.white70, fontSize: 11)),
+            Text("Risk Reduction: $riskReduction",
+                style: GoogleFonts.poppins(fontWeight: FontWeight.w500, color: Colors.white70, fontSize: 11)),
+          ],
+        ),
         children: [
           Container(
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
             child: Column(
               children: days.map((day) {
                 final d = day['day']?.toString() ?? '';
-                final a = day['action']?.toString() ?? '';
+                final task = day['task']?.toString() ?? day['action']?.toString() ?? '';
                 return Padding(
                   padding: const EdgeInsets.only(bottom: 10),
                   child: Row(
@@ -520,11 +531,11 @@ class _PerformanceAnalysisPageState extends State<PerformanceAnalysisPage> {
                       Container(
                         width: 50, padding: const EdgeInsets.symmetric(vertical: 4),
                         decoration: BoxDecoration(color: _white, borderRadius: BorderRadius.circular(4)),
-                        child: Center(child: Text(d, style: GoogleFonts.poppins(fontWeight: FontWeight.w900, fontSize: 10))),
+                        child: Center(child: Text("Day $d", style: GoogleFonts.poppins(fontWeight: FontWeight.w900, fontSize: 10))),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
-                        child: Text(a, style: GoogleFonts.poppins(color: _white, fontSize: 12, fontWeight: FontWeight.w500)),
+                        child: Text(task, style: GoogleFonts.poppins(color: _white, fontSize: 12, fontWeight: FontWeight.w500)),
                       ),
                     ],
                   ),

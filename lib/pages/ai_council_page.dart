@@ -216,43 +216,22 @@ class _Header extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 10),
       child: Row(
         children: [
-          // Avatar
-          Container(
-            width: 44, height: 44,
-            decoration: brutalBox(_white, radius: 50, shadow: 3),
-            child: const ClipOval(
-              child: Center(child: Icon(Icons.school, size: 24, color: _black)),
+          // Back button
+          GestureDetector(
+            onTap: () => Navigator.of(context).pop(),
+            child: Container(
+              width: 44, height: 44,
+              decoration: brutalBox(_white, radius: 12, shadow: 3),
+              child: const Center(
+                child: Icon(Icons.arrow_back_rounded, size: 22, color: _black),
+              ),
             ),
           ),
-          const SizedBox(width: 10),
-          Text("Campus ++",
+          const SizedBox(width: 12),
+          Text("AI Council",
               style: GoogleFonts.poppins(
                   fontWeight: FontWeight.w900, fontSize: 18, color: _black)),
           const Spacer(),
-          // Status badge
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
-            decoration: BoxDecoration(
-              color: _black,
-              borderRadius: BorderRadius.circular(100),
-              border: Border.all(color: _black, width: 2),
-              boxShadow: const [BoxShadow(color: _black, offset: Offset(3, 3))],
-            ),
-            child: Row(
-              children: [
-                Container(
-                  width: 7, height: 7,
-                  decoration: const BoxDecoration(color: _greenBtn, shape: BoxShape.circle),
-                ),
-                const SizedBox(width: 6),
-                Text("LOW",
-                    style: GoogleFonts.poppins(
-                        color: _greenBtn, fontWeight: FontWeight.w800, fontSize: 11,
-                        letterSpacing: 0.5)),
-              ],
-            ),
-          ),
-          const SizedBox(width: 8),
           // Regenerate AI Insights button
           GestureDetector(
             onTap: onRegenerate,
@@ -739,7 +718,8 @@ class _StripItem extends StatelessWidget {
             const SizedBox(height: 2),
             Text(value,
                 style: GoogleFonts.poppins(
-                    fontWeight: FontWeight.w900, fontSize: 13, color: _black),
+                    fontWeight: FontWeight.w900, fontSize: 12, color: _black),
+                maxLines: 2,
                 overflow: TextOverflow.ellipsis),
           ],
         ),
