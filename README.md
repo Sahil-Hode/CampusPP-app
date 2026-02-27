@@ -74,5 +74,5 @@ Health check: `http://localhost:3000/health`
 
 ## Notes
 
-- The Flutter app currently targets hosted endpoints like `https://techxpression-hackathon.onrender.com/api` for multiple features.
+- The Flutter app currently targets hosted endpoints like `https://campuspp-f7qx.onrender.com/api` for multiple features.
 - `backend/` is useful for local voice/chat backend development and testing.

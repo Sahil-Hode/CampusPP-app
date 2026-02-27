@@ -5,6 +5,7 @@ import 'package:audioplayers/audioplayers.dart';
 import 'dart:convert' as convert;
 import 'dart:typed_data';
 import '../services/ai_service.dart';
+import 'package:socket_io_client/socket_io_client.dart' as IO;
 import '../services/student_service.dart';
 
 class ThreeDMentorPage extends StatefulWidget {
@@ -18,6 +19,7 @@ class _ThreeDMentorPageState extends State<ThreeDMentorPage> {
   // Services
   late stt.SpeechToText _speech;
   final AudioPlayer _audioPlayer = AudioPlayer();
+  late IO.Socket _socket;
 
   // State variables
   String? _studentContext; // Store fetched student data
@@ -41,6 +43,55 @@ class _ThreeDMentorPageState extends State<ThreeDMentorPage> {
     _initSpeech();
     _initAudioPlayer();
     _fetchStudentContext();
+    _initSocket();
+  }
+
+  void _initSocket() {
+    _socket = IO.io('https://campuspp-f7qx.onrender.com', IO.OptionBuilder()
+        .setTransports(['websocket'])
+        .enableAutoConnect()
+        .build());
+
+    _socket.onConnect((_) {
+      print('Connected to Voice Chat Server');
+    });
+    
+    _socket.on('aiResponse', (data) {
+      if (mounted) {
+        setState(() {
+          _isProcessing = false;
+          // Only update the text if it's the AI response
+          _text = data['response'] ?? "I couldn't process that.";
+        });
+      }
+    });
+
+    _socket.on('ttsAudio', (data) async {
+      print("Received audio from Voice Chat backend");
+      try {
+        final String base64Audio = data['audioBase64'];
+        final Uint8List audioBytes = convert.base64Decode(base64Audio);
+        if (mounted) {
+           setState(() => _isProcessing = false);
+        }
+        await _playAudioBytes(audioBytes);
+      } catch (e) {
+        print("Error decoding or playing audio: $e");
+      }
+    });
+    
+    _socket.on('ttsError', (data) {
+        if(mounted) {
+           setState(() => _isProcessing = false);
+           ScaffoldMessenger.of(context).showSnackBar(
+             SnackBar(content: Text("Error generating audio: ${data['message']}")),
+           );
+        }
+    });
+
+    _socket.onDisconnect((_) {
+      print('Disconnected from Voice Chat Server');
+    });
   }
 
   Future<void> _fetchStudentContext() async {
@@ -67,10 +118,6 @@ class _ThreeDMentorPageState extends State<ThreeDMentorPage> {
       print("Error fetching student context: $e");
     }
   }
-
-  // ... existing methods
-
-  // Real Backend Processing (Mistral + ElevenLabs)
 
 
   void _initAudioPlayer() {
@@ -120,18 +167,17 @@ class _ThreeDMentorPageState extends State<ThreeDMentorPage> {
         
         _speech.listen(
           onResult: (val) {
-            setState(() {
-              _text = val.recognizedWords;
-            });
-            // 2. Only process if it's the final result or confidence is high enough
             if (val.finalResult) {
+              setState(() {
+                _text = val.recognizedWords;
+              });
               _processResponse(val.recognizedWords);
             }
           },
           localeId: _selectedLanguage,
           listenMode: stt.ListenMode.dictation, // Better for general conversation
           cancelOnError: true,
-          partialResults: true,
+          partialResults: false,
         );
       } else {
         if (mounted) {
@@ -146,65 +192,48 @@ class _ThreeDMentorPageState extends State<ThreeDMentorPage> {
     }
   }
 
-  // Real Backend Processing (Mistral + ElevenLabs)
+  // Socket.IO Backend Processing
   Future<void> _processResponse(String input) async {
     if (input.isEmpty) return;
 
-    setState(() => _isProcessing = true);
+    if (mounted) {
+       setState(() {
+          _isProcessing = true;
+          _text = input; // Keep the recognized text on screen
+       });
+    }
     
-    // 1. Get AI Text Response
-    String? aiResponse = await AIService.getAIResponse(input, _selectedLanguage, studentContext: _studentContext);
+    String languageName = (_selectedLanguage == 'hi-IN') ? "Hindi" : (_selectedLanguage == 'mr-IN' ? "Marathi" : "English");
     
-    if (aiResponse == null) {
-      if (mounted) setState(() => _isProcessing = false);
-      // Fallback or error message
-      _text = "Sorry, I couldn't connect to my brain.";
-      return; 
+    String systemPrompt = """You are a helpful and knowledgeable teacher named Deepak. You are mentoring a student.
+    
+    CRITICAL INSTRUCTIONS:
+    1. ALWAYS reply in $languageName. Use perfect grammar and natural phrasing.
+    2. If the user asks a general knowledge or academic question (e.g., about math, science, history), answer it accurately and concisely.
+    3. Use the provided STUDENT DATA ONLY if the user asks something personal about themselves (like their name, marks, or performance).
+    4. Keep answers under 3 sentences.
+    """;
+    
+    if (_studentContext != null) {
+      systemPrompt += "\n\nSTUDENT DATA (Use only if relevant to the question):\n$_studentContext";
     }
 
-    // 2. Convert Text to Speech (Audio)
-    try {
-      List<int>? audioBytes = await AIService.convertTextToSpeech(aiResponse);
-
-      if (audioBytes == null) {
-         if (mounted) {
-           setState(() => _isProcessing = false);
-           ScaffoldMessenger.of(context).showSnackBar(
-             const SnackBar(content: Text("Error generating audio (API might be busy).")),
-           );
-         }
-         _text = aiResponse; 
-         return;
-      }
-
-      if (mounted) {
-        setState(() {
-          _isProcessing = false;
-          _text = aiResponse; 
-        });
-      }
-
-      // 3. Play Audio
-      await _playAudioBytes(audioBytes);
-    } catch (e) {
-      print("Audio Error: $e");
-      if (mounted) {
-         setState(() => _isProcessing = false);
-         ScaffoldMessenger.of(context).showSnackBar(
-           SnackBar(content: Text("Audio playback failed: $e")),
-         );
-      }
-    }
+    _socket.emit('textMessage', {
+       'message': input,
+       'systemPrompt': systemPrompt,
+       'languageCode': _selectedLanguage
+    });
   }
 
   Future<void> _playAudioBytes(List<int> bytes) async {
-    // Correct way to play bytes in AudioPlayers
     final source = BytesSource(Uint8List.fromList(bytes));
     await _audioPlayer.play(source);
   }
 
   @override
   void dispose() {
+    _socket.disconnect();
+    _socket.dispose();
     _audioPlayer.dispose();
     super.dispose();
   }
@@ -219,7 +248,7 @@ class _ThreeDMentorPageState extends State<ThreeDMentorPage> {
           Positioned.fill(
             child: ModelViewer(
               // Using user provided model (renamed)
-              src: 'assets/models/speaking_man.glb',
+              src: 'assets/models/64f1a714fe61576b46f27ca2.glb',
               alt: '3D Mentor',
               ar: true,
               autoRotate: false, 
@@ -231,7 +260,8 @@ class _ThreeDMentorPageState extends State<ThreeDMentorPage> {
               minCameraOrbit: 'auto 0deg auto', // Prevents looking from above
               maxCameraOrbit: 'auto 90deg auto', // Prevents looking from below ground
               // Animate 'Talk' when speaking (audio playing) OR processing (thinking)
-              animationName: _isSpeaking ? 'Talk' : 'Idle',
+              // We'll leave the animationName for now (it may lack these animations unless embedded, but model will load)
+              animationName: _isSpeaking ? 'Talking_0' : 'Idle',
               autoPlay: true,
             ),
           ),

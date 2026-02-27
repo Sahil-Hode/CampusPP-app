@@ -6,7 +6,7 @@ import 'auth_service.dart';
 import '../models/resume_analysis_model.dart';
 
 class ResumeService {
-  static const String _baseUrl = 'https://techxpression-hackathon.onrender.com/api';
+  static const String _baseUrl = 'https://campuspp-f7qx.onrender.com/api';
 
   static Future<ResumeAnalysisResponse> analyzeResume(String filePath) async {
     final token = await AuthService.getToken();

@@ -4,7 +4,7 @@ import 'auth_service.dart';
 import '../models/quiz_model.dart';
 
 class QuizService {
-  static const String _baseUrl = 'https://techxpression-hackathon.onrender.com/api';
+  static const String _baseUrl = 'https://campuspp-f7qx.onrender.com/api';
 
   static Future<QuizGenerateResult> generateQuiz({
     required String learningPathId,

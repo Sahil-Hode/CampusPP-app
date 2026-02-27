@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 import 'auth_service.dart';
 
 class ChatService {
-  static const String _baseUrl = 'https://techxpression-hackathon.onrender.com/api';
+  static const String _baseUrl = 'https://campuspp-f7qx.onrender.com/api';
 
   static Future<String> sendMessage(String message, {String systemPrompt = "You are a helpful academic assistant."}) async {
     final token = await AuthService.getToken();

@@ -6,7 +6,7 @@ import '../models/student_profile_model.dart';
 import 'package:http_parser/http_parser.dart';
 
 class StudentService {
-  static const String _baseUrl = 'https://techxpression-hackathon.onrender.com/api';
+  static const String _baseUrl = 'https://campuspp-f7qx.onrender.com/api';
 
   static Future<PerformanceData> getPerformance() async {
     final token = await AuthService.getToken();

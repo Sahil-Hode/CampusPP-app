@@ -5,7 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class AuthService {
   // Base URL from the user provided documentation
-  static const String baseUrl = 'https://techxpression-hackathon.onrender.com/api';
+  static const String baseUrl = 'https://campuspp-f7qx.onrender.com/api';
 
   static Future<Map<String, dynamic>> login(String studentId, String password) async {
     final url = Uri.parse('$baseUrl/auth/login');

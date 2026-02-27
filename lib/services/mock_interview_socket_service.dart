@@ -6,7 +6,7 @@ import 'auth_service.dart';
 import '../models/mock_interview_model.dart';
 
 class MockInterviewSocketService {
-  static const String _socketUrl = 'https://techxpression-hackathon.onrender.com/mock-interview';
+  static const String _socketUrl = 'https://campuspp-f7qx.onrender.com/mock-interview';
   IO.Socket? _socket;
   
   // Streams for the UI to listen to

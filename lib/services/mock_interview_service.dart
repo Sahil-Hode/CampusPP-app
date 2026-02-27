@@ -4,7 +4,7 @@ import 'auth_service.dart';
 import '../models/mock_interview_model.dart';
 
 class MockInterviewService {
-  static const String _baseUrl = 'https://techxpression-hackathon.onrender.com/api';
+  static const String _baseUrl = 'https://campuspp-f7qx.onrender.com/api';
   // static const String _baseUrl = 'http://localhost:3000/api'; // Localhost for debugging
 
   static Future<InterviewSession> startInterview({
