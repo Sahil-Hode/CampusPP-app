@@ -9,6 +9,9 @@ class StudentProfile {
   final String course;
   final String? resumeText;
   final String? resumeUploadedAt;
+  final String phoneNo;
+  final String instituteId;
+  final String? dateOfJoin;
   
   StudentProfile({
     required this.name,
@@ -19,6 +22,9 @@ class StudentProfile {
     required this.instituteName,
     required this.classes,
     required this.course,
+    required this.phoneNo,
+    required this.instituteId,
+    this.dateOfJoin,
     this.resumeText,
     this.resumeUploadedAt,
   });
@@ -35,7 +41,10 @@ class StudentProfile {
           'https://api.dicebear.com/7.x/avataaars/png?seed=Felix',
       instituteName: json['instituteName'] ?? '',
       classes: json['classes'] ?? '',
-      course: json['Course'] ?? '', // Note uppercase 'C' from user JSON
+      course: json['Course'] ?? '', 
+      phoneNo: json['phoneNo'] ?? '',
+      instituteId: json['instituteId'] ?? '',
+      dateOfJoin: json['dateOfJoin']?.toString(),
       resumeText: json['resumeText'],
       resumeUploadedAt: json['resumeUploadedAt']?.toString(),
     );
@@ -46,8 +55,8 @@ class StudentProfile {
       'name': name,
       'language': language,
       'classes': classes,
-      // 'avatar': avatarUrl, // User API spec doesn't explicitly ask for avatar update, but we might keep it or remove it depending on strictness.
-      // Keeping it safe by following user Spec for UPDATE
+      'Course': course,
+      'phoneNo': phoneNo,
     };
   }
 }

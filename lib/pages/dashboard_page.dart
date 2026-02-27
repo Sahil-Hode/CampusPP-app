@@ -23,6 +23,7 @@ import '../widgets/quiz_overview_card.dart';
 import '../services/quiz_service.dart';
 import '../models/quiz_model.dart';
 import 'ar_viewer_page.dart';
+import 'predictive_dashboard_page.dart';
 
 
 import '../models/student_profile_model.dart';
@@ -42,6 +43,7 @@ class _DashboardPageState extends State<DashboardPage> {
   StudentProfile? _profile; // Added profile
   QuizOverviewSummary? _quizOverview;
   QuizScoreSummary? _quizScore;
+  Map<String, dynamic>? _predictiveData;
   bool _isLoading = true;
 
   @override
@@ -82,6 +84,7 @@ class _DashboardPageState extends State<DashboardPage> {
         StudentService.getFullStudentProfile(),
         QuizService.getOverviewSummary(),
         QuizService.getScoreSummary(),
+        StudentService.getPredictiveAnalysis(),
       ]);
 
       if (mounted) {
@@ -93,6 +96,9 @@ class _DashboardPageState extends State<DashboardPage> {
           _profile = results[4] as StudentProfile;
           _quizOverview = results[5] as QuizOverviewSummary;
           _quizScore = results[6] as QuizScoreSummary;
+          
+          final pData = results[7] as Map<String, dynamic>;
+          _predictiveData = pData['predictiveIntelligence'] ?? pData;
           _isLoading = false;
         });
       }
@@ -220,6 +226,12 @@ class _DashboardPageState extends State<DashboardPage> {
     } else if (!_isLoading && _riskData == null && _overviewData == null) {
        riskText = 'Risk: Unknown';
     }
+
+    final stability = _predictiveData?['academicStability'] ?? {};
+    final trend = _predictiveData?['trendAnalysis'] ?? {};
+    final impact = _predictiveData?['impactSimulator'] ?? {};
+    final alertData = _predictiveData?['smartAlert'] ?? {};
+    final alert = alertData['alert'] ?? alertData;
 
     return Scaffold(
       backgroundColor: const Color(0xFFB8E6D5), // Light mint/cyan background
@@ -361,6 +373,67 @@ class _DashboardPageState extends State<DashboardPage> {
                   padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: Column(
                   children: [
+                    if (alert.isNotEmpty && alert['level'] != 'Safe' && alert['level'] != null)
+                      Container(
+                        width: double.infinity,
+                        margin: const EdgeInsets.only(bottom: 16),
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: (alert['level'] == 'Critical' || alert['level'] == 'High') 
+                                ? const Color(0xFFFFCDD2) : const Color(0xFFFFE0B2),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: Colors.black, width: 2),
+                          boxShadow: const [BoxShadow(color: Colors.black, offset: Offset(4, 4), blurRadius: 0)],
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.warning, color: Colors.red, size: 32),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text('${alert['level']} Alert'.toUpperCase(), style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w900, color: Colors.red[900])),
+                                  const SizedBox(height: 4),
+                                  Text(alert['message'] ?? 'Immediate action required.', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                                ],
+                              ),
+                            )
+                          ],
+                        ),
+                      ),
+                      
+                    if (stability.isNotEmpty)
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _buildNeuStatCard(
+                              title: 'Stability',
+                              value: '${stability['stabilityScore'] ?? 0}/100',
+                              color: const Color(0xFFC5CAE9),
+                              icon: Icons.shield_outlined,
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: _buildNeuStatCard(
+                              title: 'Failure Risk',
+                              value: '${stability['finalRisk'] ?? 0}%',
+                              color: const Color(0xFFFFD3B6),
+                              icon: Icons.warning_amber_rounded,
+                              isAlert: ((stability['finalRisk'] ?? 0) > 40),
+                            ),
+                          ),
+                        ],
+                      ),
+                      
+                    if (stability.isNotEmpty) const SizedBox(height: 16),
+
+                    if (trend.isNotEmpty)
+                      _buildNeuTrendCard(trend),
+                    
+                    if (trend.isNotEmpty) const SizedBox(height: 16),
+
                     // Attendance and LMS Engagement Row
                     // LMS Engagement Card (Horizontal & Compact)
                     LMSEngagementCard(
@@ -465,6 +538,14 @@ class _DashboardPageState extends State<DashboardPage> {
                           onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const InterventionsPage())),
                           useGridSizing: true,
                         ),
+                        _buildQuickActionButton(
+                          context,
+                          icon: Icons.batch_prediction_outlined,
+                          label: 'Predictive AI',
+                          color: const Color(0xFFFDEB71), // Bright Yellow
+                          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const PredictiveDashboardPage())),
+                          useGridSizing: true,
+                        ),
                       ],
                     ),
                     const SizedBox(height: 24),
@@ -548,6 +629,68 @@ class _DashboardPageState extends State<DashboardPage> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildNeuStatCard({required String title, required String value, required Color color, required IconData icon, bool isAlert = false}) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.black, width: 2),
+        boxShadow: const [BoxShadow(color: Colors.black, offset: Offset(4, 4), blurRadius: 0)],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, size: 16, color: Colors.black87),
+              const SizedBox(width: 8),
+              Expanded(child: Text(title, style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.black87), overflow: TextOverflow.ellipsis)),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(value, style: GoogleFonts.poppins(fontSize: 24, fontWeight: FontWeight.w900, color: isAlert ? Colors.red[900] : Colors.black)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNeuTrendCard(Map<String, dynamic> trend) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFFDCEDC1), // Light Mint
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.black, width: 2),
+        boxShadow: const [BoxShadow(color: Colors.black, offset: Offset(4, 4), blurRadius: 0)],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                (trend['direction'] == 'Improving') ? Icons.arrow_upward :
+                (trend['direction'] == 'Declining') ? Icons.arrow_downward : Icons.swap_horiz,
+                size: 24,
+                color: (trend['direction'] == 'Improving') ? Colors.green :
+                        (trend['direction'] == 'Declining') ? Colors.red : Colors.orange,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  trend['label'] ?? 'Stable Performance',
+                  style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.bold),
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }

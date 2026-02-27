@@ -255,6 +255,31 @@ class StudentService {
     }
   }
 
+  static Future<Map<String, dynamic>> getPredictiveAnalysis() async {
+    final token = await AuthService.getToken();
+    if (token == null) throw Exception('No token found');
+
+    final url = '$_baseUrl/student/performance/predictive?t=${DateTime.now().millisecondsSinceEpoch}';
+    final response = await http.get(
+      Uri.parse(url),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Accept': 'application/json',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      final json = jsonDecode(response.body);
+      if (json['success'] == true && json['data'] != null) {
+        return json['data'];
+      } else {
+        throw Exception('Invalid data structure');
+      }
+    } else {
+      throw Exception('Failed to load predictive analysis');
+    }
+  }
+
   static Future<StudentProfile> getProfile() async {
     final token = await AuthService.getToken();
     if (token == null) throw Exception('No token found');
@@ -318,7 +343,7 @@ class StudentService {
     }
   }
 
-  static Future<void> updateProfile(String name, String language, String classes) async {
+  static Future<void> updateProfile(String name, String language, String classes, String course, String phoneNo) async {
     final token = await AuthService.getToken();
     if (token == null) throw Exception('No token found');
 
@@ -332,6 +357,8 @@ class StudentService {
         'name': name,
         'language': language,
         'classes': classes,
+        'Course': course,
+        'phoneNo': phoneNo,
       }),
     );
 
