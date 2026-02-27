@@ -783,7 +783,7 @@ class _DashboardPageState extends State<DashboardPage> {
                 child: Column(
                   children: [
                     const Text('URGENCY', style: TextStyle(fontSize: 8, fontWeight: FontWeight.w900, letterSpacing: 0.5)),
-                    Text(c.urgency.toUpperCase(), style: const TextStyle(fontSize: 12, fontWeight: FontWeight.black)),
+                    Text(c.urgency.toUpperCase(), style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w900)),
                   ],
                 ),
               ),
