@@ -1,0 +1,860 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Campus++ Real-Time Mock Interview</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { overflow: hidden; background: #0b111a; color: #e7f1ff; font-family: "Segoe UI", Arial, sans-serif; }
+    canvas { display: block; }
+    .panel {
+      position: fixed; top: 12px; left: 50%; transform: translateX(-50%); z-index: 20;
+      width: min(860px, calc(100vw - 24px));
+      background: rgba(7, 16, 27, 0.84); border: 1px solid rgba(100, 186, 255, 0.35); border-radius: 14px;
+      backdrop-filter: blur(10px); padding: 14px; transition: transform 0.25s ease, opacity 0.25s ease;
+    }
+    .panel.hidden { transform: translate(-50%, -140%); opacity: 0; pointer-events: none; }
+    .title { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+    .title h1 { font-size: 17px; color: #9ad5ff; }
+    .badge { font-size: 12px; color: #8fd0ff; background: rgba(64, 148, 212, 0.2); padding: 6px 10px; border-radius: 999px; }
+    .row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+    .row input {
+      min-width: 220px; flex: 1; border: 1px solid rgba(130, 179, 211, 0.25);
+      border-radius: 9px; padding: 10px 12px; background: #102538; color: #d8ecff;
+    }
+    button {
+      border: none; border-radius: 9px; padding: 10px 12px; font-weight: 700; cursor: pointer;
+      background: #65c8ff; color: #03243d;
+    }
+    button.secondary { background: #1d3f5a; color: #c8e8ff; }
+    button.danger { background: #8a2f43; color: #ffd9e1; }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+    .status { font-size: 13px; color: #b9d5ea; margin-bottom: 8px; min-height: 20px; }
+    .live { color: #9fffc3; font-weight: 600; }
+    .interim { color: #9fb8cb; font-style: italic; }
+    .feed {
+      max-height: min(23vh, 210px); overflow: auto; padding: 8px; border-radius: 10px;
+      background: rgba(8, 20, 33, 0.7); border: 1px solid rgba(130, 179, 211, 0.2); font-size: 14px;
+    }
+    @media (max-width: 700px) {
+      .panel { top: 10px; width: calc(100vw - 14px); padding: 10px; }
+      .title h1 { font-size: 16px; }
+      .feed { max-height: min(22vh, 170px); }
+    }
+    .line { margin: 7px 0; line-height: 1.45; }
+    .you { color: #9cc8ff; }
+    .ai { color: #9ef1cc; }
+    #subtitle-overlay {
+      position: fixed; z-index: 30; left: 50%; bottom: 22px; transform: translateX(-50%);
+      width: min(90vw, 860px); text-align: center; font-size: clamp(16px, 2.2vw, 24px);
+      color: #ebf4ff; text-shadow: 0 2px 8px rgba(0, 0, 0, 0.9);
+      background: rgba(6, 16, 28, 0.55); border-radius: 10px; padding: 8px 10px;
+    }
+    #user-live-overlay {
+      position: fixed; z-index: 31; left: 50%; top: 18px; transform: translateX(-50%);
+      width: min(92vw, 980px); text-align: center; font-size: clamp(14px, 1.8vw, 20px);
+      color: #9cc8ff; text-shadow: 0 2px 8px rgba(0, 0, 0, 0.9); min-height: 24px;
+      background: rgba(7, 26, 41, 0.62); border-radius: 10px; padding: 8px 10px;
+    }
+    #loader {
+      position: fixed; inset: 0; z-index: 40; background: #070d14; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    }
+    #loader p { color: #9ec8e7; font-weight: 600; font-size: 18px; margin-bottom: 15px; }
+    .progress-track {
+      width: 280px; height: 12px; background: rgba(255, 255, 255, 0.1); border-radius: 6px; overflow: hidden;
+    }
+    #load-progress {
+      width: 0%; height: 100%; background: #65c8ff; transition: width 0.2s ease-out;
+    }
+    @keyframes pulse {
+      0% { opacity: 0.6; }
+      100% { opacity: 1; }
+    }
+    #vr-btn {
+      position: fixed; right: 16px; bottom: 16px; z-index: 20; border: 1px solid rgba(130, 185, 219, 0.3);
+      background: rgba(8, 26, 44, 0.8); color: #b8dbf5; border-radius: 999px; padding: 10px 16px;
+    }
+    #mic-gate {
+      position: fixed; inset: 0; z-index: 50; display: none; align-items: center; justify-content: center;
+      background: rgba(3, 8, 14, 0.84);
+    }
+    #mic-gate .card {
+      width: min(90vw, 520px); border-radius: 14px; padding: 18px;
+      background: rgba(10, 24, 38, 0.96); border: 1px solid rgba(126, 180, 214, 0.45); text-align: center;
+    }
+    #mic-gate h3 { color: #a8d8ff; margin-bottom: 10px; }
+    #mic-gate p { color: #c7ddf0; font-size: 14px; margin-bottom: 14px; }
+    #mic-gate button {
+      border: none; border-radius: 9px; padding: 10px 14px; cursor: pointer; font-weight: 700;
+      background: #65c8ff; color: #03243d;
+    }
+  </style>
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.162.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.162.0/examples/jsm/"
+    }
+  }
+  </script>
+</head>
+<body>
+  <div id="loader">
+    <p id="load-text">Loading interview room... 0%</p>
+    <div class="progress-track"><div id="load-progress"></div></div>
+  </div>
+
+  <div class="panel">
+    <div class="title">
+      <h1>* Mr. Arjun - Live Mock Interview</h1>
+      <span class="badge" id="candidate-badge">Candidate: Rahul</span>
+    </div>
+    <div class="row" style="display: none;">
+      <input id="mistral-key" type="password" placeholder="Paste Mistral API key (live)" />
+      <button id="save-key-btn" class="secondary">Use Key</button>
+    </div>
+    <div class="row">
+      <button id="start-btn">Start Interview</button>
+      <button id="end-btn" class="danger" disabled>End</button>
+    </div>
+    <div id="status" class="status">Ready.</div>
+    <div id="transcript" class="status interim"></div>
+    <div id="feed" class="feed"></div>
+  </div>
+
+  <button id="vr-btn" disabled>Enter VR</button>
+  <div id="user-live-overlay"></div>
+  <div id="subtitle-overlay"></div>
+
+  <script type="module">
+    import * as THREE from 'three';
+    import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+    import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+    import { XRControllerModelFactory } from 'three/addons/webxr/XRControllerModelFactory.js';
+    
+    window.addEventListener("error", (e) => {
+      const pText = document.getElementById("load-text");
+      if (pText) pText.textContent = `JS Error: ${e.message} at ${e.filename}:${e.lineno}`;
+    });
+    window.addEventListener("unhandledrejection", (e) => {
+      const pText = document.getElementById("load-text");
+      if (pText) pText.textContent = `Promise Error: ${e.reason}`;
+    });
+
+    const STUDENT_API_BASE = "https://campuspp-f7qx.onrender.com/api";
+
+    const GOOGLE_VOICE = {
+      languageCode: "en-IN",
+      name: "en-IN-Wavenet-B",
+      ssmlGender: "MALE"
+    };
+
+    const ui = {
+      startBtn: document.getElementById("start-btn"),
+      saveKeyBtn: document.getElementById("save-key-btn"),
+      mistralKey: document.getElementById("mistral-key"),
+      endBtn: document.getElementById("end-btn"),
+      status: document.getElementById("status"),
+      transcript: document.getElementById("transcript"),
+      feed: document.getElementById("feed"),
+      subtitle: document.getElementById("subtitle-overlay"),
+      userLive: document.getElementById("user-live-overlay")
+    };
+    const panel = document.querySelector(".panel");
+
+    let scene, camera, renderer, controls;
+    let seatPos = new THREE.Vector3(3, 1.15, 0);
+    let lookAt = new THREE.Vector3(0, 1.15, 0);
+
+    let interviewActive = false;
+    let isAIResponding = false;
+    let isAudioPlaying = false;
+    
+    let recognition = null;
+    let isListening = false;
+
+    const history = [];
+    const INTERVIEWER = {
+      name: "Mr. Arjun",
+      systemPrompt: `You are Mr. Arjun, a senior interviewer in a one-on-one mock interview.
+Rules:
+- Ask one question at a time and keep it concise.
+- Be professional, warm, and realistic.
+- Use behavioral, technical, and situational questions naturally.
+- Use STAR probing when useful.
+- Do not repeat earlier questions.
+- Keep every response under 90 words for voice playback.`
+    };
+
+    let googleCreds = null;
+    let googleTokenCache = { token: null, expiryMs: 0 };
+    let authToken = "";
+    let backendSessionId = null;
+    const candidateContext = {
+      name: "Rahul",
+      course: "",
+      studentId: "",
+      resumeText: "",
+      performance: null
+    };
+
+    initScene();
+    wireUI();
+    registerServiceWorker();
+    initSpeechRecognition();
+
+    function parseJsonParam(value) {
+      if (!value) return null;
+      try { return JSON.parse(value); } catch (_) { return null; }
+    }
+
+    function getCandidateName() {
+      return candidateContext.name || "Candidate";
+    }
+
+    function truncateText(text, maxLen = 3500) {
+      if (!text) return "";
+      const cleaned = String(text).trim();
+      if (cleaned.length <= maxLen) return cleaned;
+      return `${cleaned.slice(0, maxLen)}...`;
+    }
+
+    function hydrateFromUrlParams() {
+      const params = new URLSearchParams(window.location.search);
+      authToken = params.get("token") || "";
+    }
+
+    async function fetchStudentContextWithToken() {
+      if (!authToken) { setStatus("No auth token. Data will use defaults."); return; }
+      setStatus("Fetching your profile & resume...");
+      const headers = { "Authorization": `Bearer ${authToken}`, "Accept": "application/json" };
+      try {
+        const [profileRes, perfRes] = await Promise.all([
+          fetch(`${STUDENT_API_BASE}/student/full-data?t=${Date.now()}`, { headers }),
+          fetch(`${STUDENT_API_BASE}/student/performance?t=${Date.now()}`, { headers })
+        ]);
+
+        if (profileRes.ok) {
+          const profileData = await profileRes.json();
+          const p = profileData?.data?.profile || profileData?.profile || profileData?.data || profileData || {};
+          candidateContext.name = p.name || candidateContext.name;
+          candidateContext.course = p.Course || p.course || candidateContext.course;
+          candidateContext.studentId = p.studentId || candidateContext.studentId;
+          candidateContext.resumeText = p.resumeText || candidateContext.resumeText;
+          setStatus(`Profile loaded: ${candidateContext.name}`);
+        } else {
+          setStatus(`Profile fetch failed (${profileRes.status}). Using defaults.`);
+        }
+        if (perfRes.ok) {
+          const perfData = await perfRes.json();
+          candidateContext.performance = perfData?.data?.currentPerformance || perfData?.data || candidateContext.performance;
+        }
+      } catch (err) {
+        setStatus(`Data fetch error: ${err.message}. Using defaults.`);
+      }
+    }
+
+    async function initializeInterviewContext() {
+      hydrateFromUrlParams();
+      await fetchStudentContextWithToken();
+      candidateContext.resumeText = truncateText(candidateContext.resumeText);
+      const badge = document.getElementById("candidate-badge");
+      if (badge) badge.textContent = `Candidate: ${getCandidateName()}`;
+      localStorage.setItem("campuspp_candidate_name", candidateContext.name || "Rahul");
+      if (candidateContext.resumeText) localStorage.setItem("campuspp_resume_text", candidateContext.resumeText);
+    }
+
+    async function wireUI() {
+      try {
+        googleCreds = await loadGoogleCredentials();
+      } catch (err) {
+        setStatus(`Google credentials load failed: ${err.message}`);
+      }
+
+      // Disable Start until data is ready
+      ui.startBtn.disabled = true;
+      ui.startBtn.textContent = "Loading...";
+
+      ui.startBtn.addEventListener("click", startInterview);
+      ui.saveKeyBtn.addEventListener("click", () => {
+        // Obsolete (Hidden in UI)
+      });
+      ui.endBtn.addEventListener("click", endInterview);
+
+      // Fetch all data first, then enable the Start button
+      await initializeInterviewContext();
+      ui.startBtn.disabled = false;
+      ui.startBtn.textContent = "▶ Start Interview";
+      setStatus(`Ready! Tap Start to begin your interview, ${getCandidateName()}.`);
+    }
+
+
+    async function registerServiceWorker() {
+      if (!("serviceWorker" in navigator)) return;
+      try {
+        const reg = await navigator.serviceWorker.register("./sw.js?v=20260228-11", {
+          updateViaCache: "none"
+        });
+        await reg.update();
+        if (reg.waiting) reg.waiting.postMessage("SKIP_WAITING");
+        navigator.serviceWorker.addEventListener("controllerchange", () => {
+          window.location.reload();
+        });
+      } catch (_) {}
+    }
+
+    function initSpeechRecognition() {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SpeechRecognition) {
+        setStatus("Speech Recognition not supported in this browser.");
+        return;
+      }
+      
+      recognition = new SpeechRecognition();
+      recognition.continuous = false;
+      recognition.interimResults = true;
+      recognition.lang = 'en-US';
+      
+      recognition.onstart = () => {
+        isListening = true;
+        setStatus("Listening...", true);
+      };
+      
+      recognition.onresult = (event) => {
+        // Hard block: discard ANY speech while AI is responding or audio playing
+        if (isAIResponding || isAudioPlaying) {
+          ui.transcript.textContent = "";
+          return;
+        }
+        let interimTranscript = '';
+        let finalTranscript = '';
+        
+        for (let i = event.resultIndex; i < event.results.length; ++i) {
+          if (event.results[i].isFinal) {
+            finalTranscript += event.results[i][0].transcript;
+          } else {
+            interimTranscript += event.results[i][0].transcript;
+          }
+        }
+        
+        ui.transcript.textContent = interimTranscript;
+        
+        if (finalTranscript.trim() !== "") {
+          ui.transcript.textContent = "";
+          handleCandidateAnswer(finalTranscript.trim());
+        }
+      };
+      
+      recognition.onerror = (event) => {
+        isListening = false;
+        if (event.error !== 'no-speech') {
+          console.error("Speech error: " + event.error);
+        }
+      };
+      
+      recognition.onend = () => {
+        isListening = false;
+        // Auto-restart listening if it stopped and we're not answering yet
+        if (interviewActive && !isAIResponding && !isAudioPlaying) {
+          startListening();
+        }
+      };
+    }
+
+    function startListening() {
+      if (recognition && !isListening && interviewActive && !isAIResponding && !isAudioPlaying) {
+        try { recognition.start(); } catch (e) {}
+      }
+    }
+
+    function stopListening() {
+      if (recognition && isListening) {
+        try { recognition.stop(); } catch (e) {}
+      }
+    }
+
+    function setStatus(message, live = false) {
+      ui.status.innerHTML = live ? `<span class="live">${message}</span>` : message;
+    }
+
+    function pushFeed(role, text) {
+      const line = document.createElement("div");
+      line.className = `line ${role === "you" ? "you" : "ai"}`;
+      line.textContent = `${role === "you" ? `${getCandidateName()}:` : "Mr. Arjun:"} ${text}`;
+      ui.feed.appendChild(line);
+      ui.feed.scrollTop = ui.feed.scrollHeight;
+    }
+
+    function sanitizeForSpeech(raw) {
+      if (!raw) return "";
+      return raw
+        .replace(/\[[^\]]*]/g, " ")
+        .replace(/```[\s\S]*?```/g, " ")
+        .replace(/`([^`]*)`/g, "$1")
+        .replace(/\*\*([^*]+)\*\*/g, "$1")
+        .replace(/\*([^*]+)\*/g, "$1")
+        .replace(/[_~#>]/g, " ")
+        .replace(/[|\\/]+/g, " ")
+        .replace(/\s+/g, " ")
+        .trim();
+    }
+
+    async function startInterview() {
+      if (interviewActive) return;
+      interviewActive = true;
+      ui.startBtn.disabled = true;
+      ui.endBtn.disabled = false;
+
+      // Auto-enter VR mode
+      setTimeout(() => {
+        const vrBtn = document.getElementById("vr-btn");
+        if (vrBtn && !vrBtn.disabled && vrBtn.textContent !== "Exit VR") {
+          vrBtn.click();
+        }
+      }, 500);
+
+      setStatus("Interview started. Connecting to panel...");
+      
+      try {
+        const res = await fetch(`${STUDENT_API_BASE}/mock-interview/start`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${authToken}`
+            },
+            body: JSON.stringify({ resumeSource: "profile" })
+        });
+        
+        if (!res.ok) {
+            let detail = "";
+            try {
+              const errData = await res.json();
+              detail = errData?.message || JSON.stringify(errData);
+            } catch (_) {}
+            throw new Error(`API HTTP ${res.status}${detail ? ` - ${detail}` : ""}`);
+        }
+        
+        const json = await res.json();
+        if (!json.success) throw new Error(json.message || "Failed to start interview");
+        
+        backendSessionId = json.data?.sessionId;
+        const opening = json.data?.openingMessage;
+
+        if (!opening) {
+          throw new Error("No opening message received");
+        }
+
+        const cleanOpening = sanitizeForSpeech(opening);
+        pushFeed("ai", cleanOpening);
+        ui.subtitle.textContent = cleanOpening;
+        await speakTextGoogle(cleanOpening);
+
+        setStatus("Interview is live.", true);
+        panel.classList.add("hidden");
+        startListening();
+      } catch (err) {
+        interviewActive = false;
+        ui.startBtn.disabled = false;
+        ui.endBtn.disabled = true;
+        setStatus(`Start error: ${err.message}`);
+      }
+    }
+
+    async function endInterview() {
+      interviewActive = false;
+      stopListening();
+      ui.startBtn.disabled = false;
+      ui.endBtn.disabled = true;
+      
+      if (backendSessionId) {
+          try {
+              setStatus("Ending interview and generating feedback...");
+              await fetch(`${STUDENT_API_BASE}/mock-interview/end`, {
+                  method: "POST",
+                  headers: {
+                      "Content-Type": "application/json",
+                      "Authorization": `Bearer ${authToken}`
+                  },
+                  body: JSON.stringify({ sessionId: backendSessionId })
+              });
+          } catch(e) {
+              console.error(e);
+          }
+      }
+      
+      setStatus("Interview ended.");
+      ui.transcript.textContent = "";
+      ui.subtitle.textContent = "";
+      ui.userLive.textContent = "";
+      panel.classList.add("hidden");
+    }
+
+
+
+    // Flutter Native Hook
+    window.receiveUserAnswer = async function(text) {
+      if (!text || !interviewActive || isAIResponding) return;
+      
+      pushFeed("you", text);
+      ui.userLive.textContent = `${getCandidateName()}: ${text}`;
+      
+      // Stop flutter's internal logic, just use AI
+      await handleCandidateAnswer(text);
+    };
+
+    async function handleCandidateAnswer(text) {
+      stopListening();
+      isAIResponding = true;
+      setStatus("Thinking...");
+
+      const reply = await askAI(text);
+      if (reply) {
+        const cleanReply = sanitizeForSpeech(reply);
+        pushFeed("ai", cleanReply);
+        ui.subtitle.textContent = cleanReply;
+        await speakTextGoogle(cleanReply);
+      }
+
+      isAIResponding = false;
+      ui.subtitle.textContent = "";
+      
+      // AI done speaking, resume listening
+      startListening();
+    }
+
+    async function askAI(userMessage) {
+      try {
+        if (!backendSessionId) return "";
+        const res = await fetch(`${STUDENT_API_BASE}/mock-interview/text-answer`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${authToken}`
+          },
+          body: JSON.stringify({
+            sessionId: backendSessionId,
+            message: userMessage
+          })
+        });
+
+        if (!res.ok) {
+          let detail = "";
+          try {
+            const errData = await res.json();
+            detail = errData?.message || JSON.stringify(errData);
+          } catch (_) {}
+          throw new Error(`API HTTP ${res.status}${detail ? ` - ${detail}` : ""}`);
+        }
+        
+        const json = await res.json();
+        if (!json.success) throw new Error(json.message || "Failed to get AI response");
+        
+        const returnText = json.data?.message || "";
+        history.push({ role: "user", content: userMessage });
+        history.push({ role: "assistant", content: returnText });
+        return returnText;
+      } catch (err) {
+        setStatus(`AI error: ${err.message}`);
+        return "";
+      }
+    }
+
+    async function loadGoogleCredentials() {
+      const res = await fetch("./tts-campus-credentials.json");
+      if (!res.ok) throw new Error("Cannot read tts-campus-credentials.json");
+      return res.json();
+    }
+
+    function base64UrlEncode(bytes) {
+      let binary = "";
+      bytes.forEach((b) => { binary += String.fromCharCode(b); });
+      return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
+    }
+
+    function strToBase64Url(str) {
+      return base64UrlEncode(new TextEncoder().encode(str));
+    }
+
+    async function importPrivateKeyFromPem(pem) {
+      const keyBody = pem.replace("-----BEGIN PRIVATE KEY-----", "").replace("-----END PRIVATE KEY-----", "").replace(/\s+/g, "");
+      const binary = Uint8Array.from(atob(keyBody), c => c.charCodeAt(0));
+      return crypto.subtle.importKey(
+        "pkcs8",
+        binary.buffer,
+        { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" },
+        false,
+        ["sign"]
+      );
+    }
+
+    async function getGoogleAccessToken() {
+      if (!googleCreds) throw new Error("Google credentials unavailable");
+      const now = Math.floor(Date.now() / 1000);
+      if (googleTokenCache.token && Date.now() < googleTokenCache.expiryMs - 60_000) {
+        return googleTokenCache.token;
+      }
+
+      const header = { alg: "RS256", typ: "JWT" };
+      const claim = {
+        iss: googleCreds.client_email,
+        scope: "https://www.googleapis.com/auth/cloud-platform",
+        aud: googleCreds.token_uri,
+        exp: now + 3600,
+        iat: now
+      };
+
+      const encodedHeader = strToBase64Url(JSON.stringify(header));
+      const encodedClaim = strToBase64Url(JSON.stringify(claim));
+      const unsigned = `${encodedHeader}.${encodedClaim}`;
+      const key = await importPrivateKeyFromPem(googleCreds.private_key);
+      const signature = await crypto.subtle.sign("RSASSA-PKCS1-v1_5", key, new TextEncoder().encode(unsigned));
+      const signed = `${unsigned}.${base64UrlEncode(new Uint8Array(signature))}`;
+
+      const tokenRes = await fetch(googleCreds.token_uri, {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: new URLSearchParams({
+          grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer",
+          assertion: signed
+        })
+      });
+
+      if (!tokenRes.ok) throw new Error(`Google auth HTTP ${tokenRes.status}`);
+      const tokenData = await tokenRes.json();
+      googleTokenCache = {
+        token: tokenData.access_token,
+        expiryMs: Date.now() + (tokenData.expires_in * 1000)
+      };
+      return tokenData.access_token;
+    }
+
+    async function speakTextGoogle(text) {
+      if (!text) return;
+      stopListening();  // Force-kill mic before AI speaks
+      try {
+        isAudioPlaying = true;
+        const token = await getGoogleAccessToken();
+        const res = await fetch("https://texttospeech.googleapis.com/v1/text:synthesize", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            input: { text },
+            voice: GOOGLE_VOICE,
+            audioConfig: { audioEncoding: "MP3", speakingRate: 1.0, pitch: -1.2 }
+          })
+        });
+        if (!res.ok) throw new Error(`TTS HTTP ${res.status}`);
+
+        const data = await res.json();
+        const audio = new Audio(`data:audio/mp3;base64,${data.audioContent}`);
+        await audio.play();
+        await new Promise((resolve) => {
+          audio.onended = resolve;
+          audio.onerror = resolve;
+        });
+      } catch (err) {
+        setStatus(`TTS error: ${err.message}`);
+      } finally {
+        isAudioPlaying = false;
+      }
+    }
+
+
+
+    function initScene() {
+      scene = new THREE.Scene();
+      scene.background = new THREE.Color(0xcbd6e3);
+
+      camera = new THREE.PerspectiveCamera(60, innerWidth / innerHeight, 0.01, 500);
+      camera.position.copy(seatPos);
+
+      renderer = new THREE.WebGLRenderer({ antialias: true });
+      renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+      renderer.setSize(innerWidth, innerHeight);
+      renderer.outputColorSpace = THREE.SRGBColorSpace;
+      renderer.toneMapping = THREE.ACESFilmicToneMapping;
+      renderer.toneMappingExposure = 1.15;
+      renderer.shadowMap.enabled = true;
+      renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+      renderer.xr.enabled = true;
+      document.body.appendChild(renderer.domElement);
+
+      controls = new OrbitControls(camera, renderer.domElement);
+      controls.target.copy(lookAt);
+      controls.enableDamping = true;
+
+      scene.add(new THREE.AmbientLight(0xffffff, 0.68));
+      const dir = new THREE.DirectionalLight(0xffffff, 1.0);
+      dir.position.set(4, 5, 3);
+      dir.castShadow = true;
+      dir.shadow.mapSize.set(2048, 2048);
+      dir.shadow.camera.near = 0.4;
+      dir.shadow.camera.far = 40;
+      dir.shadow.camera.left = -10;
+      dir.shadow.camera.right = 10;
+      dir.shadow.camera.top = 10;
+      dir.shadow.camera.bottom = -10;
+      scene.add(dir);
+      const fill = new THREE.DirectionalLight(0xb6d5ff, 0.35);
+      fill.position.set(-4, 3, -3);
+      scene.add(fill);
+
+      loadModel();
+      setupVR();
+
+      window.addEventListener("resize", () => {
+        camera.aspect = innerWidth / innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(innerWidth, innerHeight);
+      });
+
+      renderer.setAnimationLoop(() => {
+        controls.update();
+        renderer.render(scene, camera);
+      });
+    }
+
+    function loadModel() {
+      const loader = new GLTFLoader();
+      const draco = new DRACOLoader();
+      draco.setDecoderPath("https://cdn.jsdelivr.net/npm/three@0.162.0/examples/jsm/libs/draco/");
+      loader.setDRACOLoader(draco);
+
+      loader.load(
+        "ASSETS/classroom.glb",
+        (gltf) => {
+          const model = gltf.scene;
+          model.traverse((child) => {
+            if (child.isMesh) {
+              child.castShadow = true;
+              child.receiveShadow = true;
+            }
+          });
+
+          const box = new THREE.Box3().setFromObject(model);
+          const center = box.getCenter(new THREE.Vector3());
+          model.position.set(-center.x, -box.min.y, -center.z);
+          scene.add(model);
+
+          const box2 = new THREE.Box3().setFromObject(model);
+          const size = box2.getSize(new THREE.Vector3());
+          const eyeY = 0.75;
+          seatPos.set(box2.max.x * 0.65, eyeY, box2.min.z + size.z * 0.5);
+          lookAt.set(0, eyeY, seatPos.z);
+          camera.position.copy(seatPos);
+          controls.target.copy(lookAt);
+          controls.update();
+          document.getElementById("loader").style.display = "none";
+        },
+        (xhr) => {
+          const pText = document.getElementById("load-text");
+          const pBar = document.getElementById("load-progress");
+          if (xhr.lengthComputable) {
+            const percent = Math.round((xhr.loaded / xhr.total) * 100);
+            if (pBar) pBar.style.width = percent + "%";
+            if (pText) pText.textContent = `Loading interview room... ${percent}%`;
+          } else {
+            const mb = (xhr.loaded / (1024 * 1024)).toFixed(1);
+            if (pBar) pBar.style.width = "100%";
+            if (pBar) pBar.style.animation = "pulse 1.5s infinite alternate";
+            if (pText) pText.textContent = `Loading interview room... ${mb} MB`;
+          }
+        },
+        (error) => { 
+          console.error(error); 
+          const pText = document.getElementById("load-text");
+          if (pText) pText.textContent = "Error loading 3D model.";
+        }
+      );
+    }
+
+    function setupVR() {
+      const vrBtn = document.getElementById("vr-btn");
+      if (!("xr" in navigator)) {
+        vrBtn.textContent = "WebXR N/A";
+        return;
+      }
+      navigator.xr.isSessionSupported("immersive-vr").then((supported) => {
+        if (!supported) {
+          vrBtn.textContent = "VR Unsupported";
+          return;
+        }
+        vrBtn.disabled = false;
+        vrBtn.addEventListener("click", async () => {
+          if (!renderer.xr.isPresenting) {
+            const session = await navigator.xr.requestSession("immersive-vr", {
+              optionalFeatures: ["local-floor", "bounded-floor", "hand-tracking"]
+            });
+            renderer.xr.setSession(session);
+            vrBtn.textContent = "Exit VR";
+            session.addEventListener("end", () => { vrBtn.textContent = "Enter VR"; });
+          } else {
+            renderer.xr.getSession().end();
+          }
+        });
+
+        renderer.xr.addEventListener("sessionstart", () => {
+          const baseRef = renderer.xr.getReferenceSpace();
+          if (!baseRef) return;
+          const vrX = seatPos.x * 0.4;
+          const vrY = seatPos.y - 0.2;
+          const vrZ = seatPos.z;
+          const transform = new XRRigidTransform(
+            { x: -vrX, y: vrY, z: -vrZ, w: 1 },
+            { x: 0, y: 0, z: 0, w: 1 }
+          );
+          renderer.xr.setReferenceSpace(baseRef.getOffsetReferenceSpace(transform));
+        });
+
+        setupControllers();
+      });
+    }
+
+    function setupControllers() {
+      const factory = new XRControllerModelFactory();
+      for (let i = 0; i < 2; i += 1) {
+        const controller = renderer.xr.getController(i);
+        scene.add(controller);
+
+        const laserGeom = new THREE.BufferGeometry().setFromPoints([
+          new THREE.Vector3(0, 0, 0),
+          new THREE.Vector3(0, 0, -3)
+        ]);
+        const laser = new THREE.Line(laserGeom, new THREE.LineBasicMaterial({ color: 0x64d7ff }));
+        controller.add(laser);
+
+        const grip = renderer.xr.getControllerGrip(i);
+        grip.add(factory.createControllerModel(grip));
+        scene.add(grip);
+
+        controller.addEventListener("selectstart", () => onTeleport(controller));
+      }
+    }
+
+    function onTeleport(controller) {
+      const tempMatrix = new THREE.Matrix4();
+      tempMatrix.identity().extractRotation(controller.matrixWorld);
+      const raycaster = new THREE.Raycaster();
+      raycaster.ray.origin.setFromMatrixPosition(controller.matrixWorld);
+      raycaster.ray.direction.set(0, 0, -1).applyMatrix4(tempMatrix);
+
+      const hits = raycaster.intersectObjects(scene.children, true);
+      if (!hits.length) return;
+      const point = hits[0].point;
+      const ref = renderer.xr.getReferenceSpace();
+      if (!ref) return;
+
+      const transform = new XRRigidTransform(
+        { x: -point.x, y: 0, z: -point.z, w: 1 },
+        { x: 0, y: 0, z: 0, w: 1 }
+      );
+      renderer.xr.setReferenceSpace(ref.getOffsetReferenceSpace(transform));
+    }
+  </script>
+</body>
+</html>

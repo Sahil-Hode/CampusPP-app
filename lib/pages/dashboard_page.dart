@@ -25,6 +25,7 @@ import '../widgets/quiz_overview_card.dart';
 import '../services/quiz_service.dart';
 import '../models/quiz_model.dart';
 import 'ar_viewer_page.dart';
+import 'vr_interview_page.dart';
 import 'predictive_dashboard_page.dart';
 
 
@@ -538,6 +539,16 @@ class _DashboardPageState extends State<DashboardPage> {
                           iconBgColor: const Color(0xFF7986CB),
                           textColor: Colors.black,
                           onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const ARViewerPage())),
+                        ),
+                        _buildQuickActionButton(
+                          context,
+                          icon: Icons.headset_mic_outlined,
+                          label: 'VR Interview',
+                          subtitle: 'Immersive',
+                          color: const Color(0xFFF3E5F5),
+                          iconBgColor: const Color(0xFF9C27B0),
+                          textColor: Colors.black,
+                          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const VRInterviewPage())),
                         ),
                         _buildQuickActionButton(
                           context,
