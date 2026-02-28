@@ -217,7 +217,9 @@ class _DashboardPageState extends State<DashboardPage> {
     return Scaffold(
       backgroundColor: const Color(0xFFB8E6D5), // Light mint/cyan background
       body: SafeArea(
-        child: Column(
+        child: Stack(
+          children: [
+            Column(
           children: [
             // Top section with avatar and status
             Padding(
@@ -351,7 +353,7 @@ class _DashboardPageState extends State<DashboardPage> {
                 backgroundColor: Colors.white,
                 child: SingleChildScrollView(
                   physics: const AlwaysScrollableScrollPhysics(),
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  padding: const EdgeInsets.only(left: 20, right: 20, bottom: 120),
                 child: Column(
                   children: [
                     if (alert != null && alert.level != 'Safe')
@@ -590,23 +592,45 @@ class _DashboardPageState extends State<DashboardPage> {
             ),
           ],
         ),
-      ),
-      bottomNavigationBar: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(40),
-          border: Border.all(color: Colors.black, width: 2),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: [
-            Expanded(child: _buildNavItem(context, Icons.view_in_ar, '3D Mentor', false, is3DMentor: true)),
-            Expanded(child: _buildNavItem(context, Icons.map, 'Learning Path', false, isPath: true)), 
-            Expanded(child: _buildNavItem(context, Icons.home, 'Home', true)),
-            Expanded(child: _buildNavItem(context, Icons.bar_chart, 'Performance', false, isProgress: true)),
-            Expanded(child: _buildNavItem(context, Icons.gavel, 'AI Council', false)),
+            // Floating bottom navbar overlay
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 0,
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final screenWidth = MediaQuery.of(context).size.width;
+                  final screenHeight = MediaQuery.of(context).size.height;
+
+                  final hMargin = screenWidth * 0.04;
+                  final vMargin = screenHeight * 0.02;
+                  final hPadding = screenWidth * 0.03;
+                  final vPadding = screenHeight * 0.012;
+                  final borderRadius = screenWidth * 0.08;
+                  final borderWidth = screenWidth < 360 ? 1.5 : 2.0;
+
+                  return Container(
+                    margin: EdgeInsets.symmetric(horizontal: hMargin, vertical: vMargin),
+                    padding: EdgeInsets.symmetric(horizontal: hPadding, vertical: vPadding),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(borderRadius.clamp(24, 50)),
+                      border: Border.all(color: Colors.black, width: borderWidth),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      children: [
+                        Expanded(child: _buildNavItem(context, Icons.view_in_ar, '3D Mentor', false, is3DMentor: true)),
+                        Expanded(child: _buildNavItem(context, Icons.map, 'Learning Path', false, isPath: true)),
+                        Expanded(child: _buildNavItem(context, Icons.home, 'Home', true)),
+                        Expanded(child: _buildNavItem(context, Icons.bar_chart, 'Performance', false, isProgress: true)),
+                        Expanded(child: _buildNavItem(context, Icons.gavel, 'AI Council', false)),
+                      ],
+                    ),
+                  );
+                },
+              ),
+            ),
           ],
         ),
       ),
@@ -1018,6 +1042,12 @@ class _DashboardPageState extends State<DashboardPage> {
 
 
   Widget _buildNavItem(BuildContext context, IconData icon, String label, bool isActive, {bool isProgress = false, bool isPath = false, bool isChat = false, bool is3DMentor = false}) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final iconSize = (screenWidth * 0.055).clamp(18.0, 30.0);
+    final iconPadding = (screenWidth * 0.025).clamp(6.0, 14.0);
+    final labelFontSize = (screenWidth * 0.024).clamp(8.0, 13.0);
+    final gap = (screenWidth * 0.008).clamp(2.0, 6.0);
+
     return GestureDetector(
       onTap: () {
         if (isProgress) {
@@ -1056,7 +1086,7 @@ class _DashboardPageState extends State<DashboardPage> {
         mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-            padding: const EdgeInsets.all(12),
+            padding: EdgeInsets.all(iconPadding),
             decoration: BoxDecoration(
               color: isActive ? const Color(0xFFFFA726) : Colors.transparent,
               shape: BoxShape.circle,
@@ -1064,16 +1094,18 @@ class _DashboardPageState extends State<DashboardPage> {
             child: Icon(
               icon,
               color: isActive ? Colors.white : Colors.grey[600],
-              size: 24,
+              size: iconSize,
             ),
           ),
-          const SizedBox(height: 4),
+          SizedBox(height: gap),
           FittedBox(
             fit: BoxFit.scaleDown,
             child: Text(
               label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                fontSize: 10,
+                fontSize: labelFontSize,
                 color: Colors.grey[600],
               ),
             ),
