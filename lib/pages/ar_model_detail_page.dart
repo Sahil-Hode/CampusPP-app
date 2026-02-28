@@ -1,8 +1,11 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:http/http.dart' as http;
 import 'package:model_viewer_plus/model_viewer_plus.dart';
+import 'package:path_provider/path_provider.dart';
 
-class ARModelDetailPage extends StatelessWidget {
+class ARModelDetailPage extends StatefulWidget {
   final String modelPath;
   final String title;
 
@@ -13,12 +16,75 @@ class ARModelDetailPage extends StatelessWidget {
   });
 
   @override
+  State<ARModelDetailPage> createState() => _ARModelDetailPageState();
+}
+
+class _ARModelDetailPageState extends State<ARModelDetailPage> {
+  bool _isModelLoaded = false;
+  bool _hasError = false;
+  String? _localModelPath;
+  String _errorMessage = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _prepareModel();
+  }
+
+  bool get _isRemoteUrl =>
+      widget.modelPath.startsWith('http://') ||
+      widget.modelPath.startsWith('https://');
+
+  Future<void> _prepareModel() async {
+    if (_isRemoteUrl) {
+      // Download remote model to local file so ModelViewer can load it
+      try {
+        final response = await http.get(Uri.parse(widget.modelPath));
+        if (response.statusCode == 200) {
+          final dir = await getTemporaryDirectory();
+          final fileName =
+              'ar_model_${DateTime.now().millisecondsSinceEpoch}.glb';
+          final file = File('${dir.path}/$fileName');
+          await file.writeAsBytes(response.bodyBytes);
+
+          if (mounted) {
+            setState(() {
+              _localModelPath = file.path;
+              _isModelLoaded = true;
+            });
+          }
+        } else {
+          if (mounted) {
+            setState(() {
+              _hasError = true;
+              _errorMessage = 'Failed to download model (${response.statusCode})';
+            });
+          }
+        }
+      } catch (e) {
+        if (mounted) {
+          setState(() {
+            _hasError = true;
+            _errorMessage = 'Error loading model: ${e.toString().replaceAll("Exception: ", "")}';
+          });
+        }
+      }
+    } else {
+      // Local asset — ready immediately
+      setState(() {
+        _localModelPath = widget.modelPath;
+        _isModelLoaded = true;
+      });
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFB8E6D5), // Match dashboard theme
       appBar: AppBar(
         title: Text(
-          title,
+          widget.title,
           style: GoogleFonts.poppins(
             fontWeight: FontWeight.bold,
             color: Colors.black,
@@ -71,7 +137,7 @@ class ARModelDetailPage extends StatelessWidget {
               child: Container(
                 margin: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: const Color(0xFFF5F5F5),
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(color: Colors.black, width: 2),
                   boxShadow: const [
@@ -83,16 +149,85 @@ class ARModelDetailPage extends StatelessWidget {
                   ],
                 ),
                 clipBehavior: Clip.hardEdge,
-                child: ModelViewer(
-                  backgroundColor: Colors.white,
-                  src: modelPath, // Dynamically load the correct model
-                  alt: 'A 3D model of $title',
-                  ar: true,
-                  arModes: const ['scene-viewer', 'webxr', 'quick-look'], // Support for multiple AR systems
-                  autoRotate: true,
-                  cameraControls: true,
-                  disableZoom: false,
-                ),
+                child: _hasError
+                    ? Center(
+                        child: Padding(
+                          padding: const EdgeInsets.all(24),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(Icons.error_outline, size: 48, color: Colors.red),
+                              const SizedBox(height: 12),
+                              Text(
+                                _errorMessage,
+                                textAlign: TextAlign.center,
+                                style: GoogleFonts.poppins(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.black87,
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+                              ElevatedButton(
+                                onPressed: () {
+                                  setState(() {
+                                    _hasError = false;
+                                    _isModelLoaded = false;
+                                  });
+                                  _prepareModel();
+                                },
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.black,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                ),
+                                child: Text('Retry', style: GoogleFonts.poppins(color: Colors.white)),
+                              ),
+                            ],
+                          ),
+                        ),
+                      )
+                    : _isModelLoaded && _localModelPath != null
+                        ? ModelViewer(
+                            backgroundColor: const Color(0xFFF5F5F5),
+                            src: _isRemoteUrl
+                                ? 'file://$_localModelPath'
+                                : _localModelPath!,
+                            alt: 'A 3D model of ${widget.title}',
+                            ar: true,
+                            arModes: const ['scene-viewer', 'webxr', 'quick-look'],
+                            autoRotate: true,
+                            cameraControls: true,
+                            disableZoom: false,
+                            autoPlay: true,
+                            shadowIntensity: 1.0,
+                            shadowSoftness: 1.0,
+                            exposure: 1.0,
+                            environmentImage: 'neutral',
+                            loading: Loading.eager,
+                            reveal: Reveal.auto,
+                          )
+                        : Center(
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const CircularProgressIndicator(
+                                  color: Colors.black,
+                                  strokeWidth: 2,
+                                ),
+                                const SizedBox(height: 16),
+                                Text(
+                                  'Downloading 3D Model...',
+                                  style: GoogleFonts.poppins(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 13,
+                                    color: Colors.black54,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
               ),
             ),
           ],

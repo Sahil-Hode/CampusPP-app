@@ -664,18 +664,6 @@ class _DashboardPageState extends State<DashboardPage> {
             children: [
               Text('Overall Performance',
                 style: GoogleFonts.poppins(fontWeight: FontWeight.w900, fontSize: 16)),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  color: d.riskLevel.toLowerCase() == 'low'
-                      ? const Color(0xFFA8E6CF)
-                      : const Color(0xFFFFCDD2),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.black, width: 1.5),
-                ),
-                child: Text('Risk: ${d.riskLevel}',
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 10)),
-              ),
             ],
           ),
           const SizedBox(height: 20),
