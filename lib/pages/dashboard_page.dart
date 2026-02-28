@@ -25,6 +25,7 @@ import '../widgets/quiz_overview_card.dart';
 import '../services/quiz_service.dart';
 import '../models/quiz_model.dart';
 import 'ar_viewer_page.dart';
+import 'vr_interview_page.dart';
 import 'predictive_dashboard_page.dart';
 
 
