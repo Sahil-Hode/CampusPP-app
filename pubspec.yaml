@@ -83,6 +83,8 @@ flutter:
   assets:
     - assets/models/
     - assets/logo.jpeg
+    - assets/html-model/
+    - assets/html-model/ASSETS/
 
 flutter_launcher_icons:
   android: true
