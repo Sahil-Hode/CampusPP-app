@@ -220,6 +220,20 @@ class CouncilDecisionData {
   }
 }
 
+class LearningResource {
+  final String name;
+  final String url;
+
+  LearningResource({required this.name, required this.url});
+
+  factory LearningResource.fromJson(Map<String, dynamic> json) {
+    return LearningResource(
+      name: json['name']?.toString() ?? 'Resource',
+      url: json['url']?.toString() ?? '',
+    );
+  }
+}
+
 class LearningStep {
   final String title;
   final String description;
@@ -229,6 +243,7 @@ class LearningStep {
   final int stepIndex;
   final String quizStatus; // 'passed', 'cooldown', 'unlocked', 'not_generated'
   final String? quizId;
+  final List<LearningResource> resources;
 
   LearningStep({
     required this.title,
@@ -239,9 +254,11 @@ class LearningStep {
     required this.stepIndex,
     required this.quizStatus,
     this.quizId,
+    this.resources = const [],
   });
 
   factory LearningStep.fromJson(Map<String, dynamic> json) {
+    final resList = json['resources'] as List<dynamic>? ?? [];
     return LearningStep(
       title: json['title'] ?? 'Untitled Step',
       description: json['description'] ?? '',
@@ -251,6 +268,7 @@ class LearningStep {
       stepIndex: json['stepIndex'] ?? 0,
       quizStatus: json['quizStatus'] ?? 'not_generated',
       quizId: json['quizId'],
+      resources: resList.map((r) => LearningResource.fromJson(r as Map<String, dynamic>)).toList(),
     );
   }
 }
@@ -314,6 +332,10 @@ class LearningPath {
          derivedStatus = 'locked';
        }
 
+       final stepResources = (headers[i]['resources'] as List<dynamic>? ?? [])
+           .map((r) => LearningResource.fromJson(r as Map<String, dynamic>))
+           .toList();
+
        parsedSteps.add(LearningStep(
          title: headers[i]['title'] ?? 'Untitled Step',
          description: headers[i]['description'] ?? '',
@@ -323,6 +345,7 @@ class LearningPath {
          stepIndex: headers[i]['stepIndex'] ?? 0,
          quizStatus: headers[i]['quizStatus'] ?? 'not_generated',
          quizId: headers[i]['quizId'],
+         resources: stepResources,
        ));
     }
 

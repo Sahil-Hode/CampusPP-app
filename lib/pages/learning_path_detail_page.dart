@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../models/performance_model.dart';
 import '../services/student_service.dart';
 import '../widgets/celebration_overlay.dart';
@@ -437,7 +438,80 @@ class _LearningPathDetailPageState extends State<LearningPathDetailPage> {
                       data.content,
                       style: const TextStyle(fontSize: 14, height: 1.5),
                     ),
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 16),
+
+                    // Learning Resources
+                    if (data.resources.isNotEmpty) ...[
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.black, width: 2),
+                          boxShadow: const [BoxShadow(color: Colors.black, offset: Offset(3, 3))],
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Row(
+                              children: [
+                                Icon(Icons.menu_book_rounded, size: 18, color: Colors.black87),
+                                SizedBox(width: 6),
+                                Text(
+                                  'Learning Resources',
+                                  style: TextStyle(fontWeight: FontWeight.w900, fontSize: 13, letterSpacing: 0.5),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 10),
+                            ...data.resources.map((res) => Padding(
+                              padding: const EdgeInsets.only(bottom: 8),
+                              child: GestureDetector(
+                                onTap: () async {
+                                  try {
+                                    final uri = Uri.parse(res.url);
+                                    await launchUrl(uri, mode: LaunchMode.externalApplication);
+                                  } catch (e) {
+                                    if (context.mounted) {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(content: Text('Could not open: ${res.name}')),
+                                      );
+                                    }
+                                  }
+                                },
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFE3F2FD),
+                                    borderRadius: BorderRadius.circular(10),
+                                    border: Border.all(color: Colors.black.withOpacity(0.2), width: 1.5),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      const Icon(Icons.link_rounded, size: 16, color: Color(0xFF1565C0)),
+                                      const SizedBox(width: 8),
+                                      Expanded(
+                                        child: Text(
+                                          res.name,
+                                          style: const TextStyle(
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w700,
+                                            color: Color(0xFF1565C0),
+                                            decoration: TextDecoration.underline,
+                                          ),
+                                        ),
+                                      ),
+                                      const Icon(Icons.open_in_new, size: 14, color: Colors.black45),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            )),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                    ],
                     
                     if (data.status == 'in-progress') ...[
                       if (isPassed)
