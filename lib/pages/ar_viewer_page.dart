@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
@@ -32,10 +33,16 @@ class ARModelItem {
 
   /// Parse from backend API response (GET /api/tripo3d/models)
   factory ARModelItem.fromApiJson(Map<String, dynamic> json) {
+    final modelPath = json['pbrModel'] ?? json['modelUrl'] ?? '';
+    debugPrint('[AR] fromApiJson: name=${json['name']}, '
+        'status=${json['status']}, '
+        'pbrModel=${json['pbrModel'] != null ? 'YES (${(json['pbrModel'] as String).length} chars)' : 'null'}, '
+        'modelUrl=${json['modelUrl']}, '
+        'resolvedPath=${modelPath.isNotEmpty ? 'YES' : 'EMPTY'}');
     return ARModelItem(
       id: json['_id']?.toString() ?? json['id']?.toString(),
       title: json['name'] ?? json['title'] ?? 'Untitled Model',
-      path: json['pbrModel'] ?? json['modelUrl'] ?? json['renderedImage'] ?? json['path'] ?? '',
+      path: modelPath,
       icon: Icons.view_in_ar,
       color: const Color(0xFFFBE7C6),
     );
@@ -330,8 +337,19 @@ class _ARViewerPageState extends State<ARViewerPage> {
       
       if (!mounted) return;
       if (result != null) {
-        final modelUrl = result['pbrModel'] ?? result['modelUrl'] ?? result['renderedImage'] ?? '';
+        debugPrint('[AR] Generate result keys: ${result.keys.toList()}');
+        debugPrint('[AR] pbrModel: ${result['pbrModel']}');
+        debugPrint('[AR] modelUrl: ${result['modelUrl']}');
+        final modelUrl = result['pbrModel'] ?? result['modelUrl'] ?? '';
         final modelId = result['_id']?.toString() ?? result['id']?.toString();
+        debugPrint('[AR] Resolved modelUrl: $modelUrl');
+
+        if (modelUrl.isEmpty) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Model generated but no download URL yet. Check back shortly.')),
+          );
+          return;
+        }
         
         // Save the new model
         final newModel = ARModelItem(
@@ -429,6 +447,17 @@ class _ARViewerPageState extends State<ARViewerPage> {
                     final model = models[index];
                     return GestureDetector(
                       onTap: () {
+                        if (model.path.isEmpty) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                '${model.title} is still processing. Pull down to refresh.',
+                                style: GoogleFonts.poppins(),
+                              ),
+                            ),
+                          );
+                          return;
+                        }
                         Navigator.push(
                           context,
                           MaterialPageRoute(
@@ -439,9 +468,6 @@ class _ARViewerPageState extends State<ARViewerPage> {
                           ),
                         );
                       },
-                      onLongPress: model.path.startsWith('assets/')
-                          ? null
-                          : () => _deleteModel(index),
                     child: Container(
                       decoration: BoxDecoration(
                         color: model.color,
@@ -455,31 +481,62 @@ class _ARViewerPageState extends State<ARViewerPage> {
                           ),
                         ],
                       ),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
+                      child: Stack(
                         children: [
-                          Container(
-                            padding: const EdgeInsets.all(16),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              shape: BoxShape.circle,
-                              border: Border.all(color: Colors.black, width: 2),
+                          Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(16),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    shape: BoxShape.circle,
+                                    border: Border.all(
+                                        color: Colors.black, width: 2),
+                                  ),
+                                  child: Icon(model.icon,
+                                      size: 40, color: Colors.black),
+                                ),
+                                const SizedBox(height: 16),
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 8.0),
+                                  child: Text(
+                                    model.title,
+                                    textAlign: TextAlign.center,
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: GoogleFonts.poppins(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.black,
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
-                            child: Icon(model.icon, size: 40, color: Colors.black),
                           ),
-                          const SizedBox(height: 16),
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                            child: Text(
-                              model.title,
-                              textAlign: TextAlign.center,
-                              style: GoogleFonts.poppins(
-                                fontSize: 14,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.black,
+                          // Delete button — only for non-built-in models
+                          if (!model.path.startsWith('assets/'))
+                            Positioned(
+                              top: 6,
+                              right: 6,
+                              child: GestureDetector(
+                                onTap: () => _deleteModel(index),
+                                child: Container(
+                                  padding: const EdgeInsets.all(4),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    shape: BoxShape.circle,
+                                    border: Border.all(
+                                        color: Colors.black, width: 1.5),
+                                  ),
+                                  child: const Icon(Icons.delete_outline,
+                                      size: 18, color: Colors.red),
+                                ),
                               ),
                             ),
-                          ),
                         ],
                       ),
                     ),

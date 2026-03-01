@@ -1,6 +1,10 @@
+import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:http/http.dart' as http;
 import 'package:model_viewer_plus/model_viewer_plus.dart';
+import 'package:path_provider/path_provider.dart';
 
 class ARModelDetailPage extends StatefulWidget {
   final String modelPath;
@@ -33,24 +37,63 @@ class _ARModelDetailPageState extends State<ARModelDetailPage> {
       widget.modelPath.startsWith('https://');
 
   Future<void> _prepareModel() async {
+    debugPrint('[AR Detail] modelPath = ${widget.modelPath}');
+
     if (widget.modelPath.isEmpty) {
       if (mounted) {
         setState(() {
           _hasError = true;
-          _errorMessage = 'No model URL available. The model may still be processing.';
+          _errorMessage =
+              'No model URL available. The model may still be processing.';
         });
       }
       return;
     }
 
     if (_isRemoteUrl) {
-      // Use the remote URL directly — model_viewer_plus handles HTTP URLs natively
-      // This avoids the Android WebView file:// security restriction
-      if (mounted) {
-        setState(() {
-          _modelSrc = widget.modelPath;
-          _isModelLoaded = true;
-        });
+      // Download the .glb file to temp, then use file:// so the
+      // model_viewer_plus internal proxy reads bytes from disk and
+      // serves them via its local HttpServer — avoids CloudFront
+      // signed-URL redirect issues with special characters.
+      try {
+        debugPrint('[AR Detail] Downloading model from remote URL...');
+        final response = await http.get(Uri.parse(widget.modelPath));
+        debugPrint('[AR Detail] Download status: ${response.statusCode}, '
+            'bytes: ${response.bodyBytes.length}');
+
+        if (response.statusCode == 200 && response.bodyBytes.isNotEmpty) {
+          final dir = await getTemporaryDirectory();
+          final fileName =
+              'ar_model_${DateTime.now().millisecondsSinceEpoch}.glb';
+          final file = File('${dir.path}/$fileName');
+          await file.writeAsBytes(response.bodyBytes);
+          debugPrint('[AR Detail] Saved to: ${file.path}');
+
+          if (mounted) {
+            setState(() {
+              // file:// tells model_viewer_plus proxy to read from disk
+              _modelSrc = 'file://${file.path}';
+              _isModelLoaded = true;
+            });
+          }
+        } else {
+          if (mounted) {
+            setState(() {
+              _hasError = true;
+              _errorMessage =
+                  'Failed to download model (HTTP ${response.statusCode})';
+            });
+          }
+        }
+      } catch (e) {
+        debugPrint('[AR Detail] Download error: $e');
+        if (mounted) {
+          setState(() {
+            _hasError = true;
+            _errorMessage =
+                'Error loading model: ${e.toString().replaceAll("Exception: ", "")}';
+          });
+        }
       }
     } else {
       // Local asset — ready immediately
@@ -176,6 +219,7 @@ class _ARModelDetailPageState extends State<ARModelDetailPage> {
                             backgroundColor: const Color(0xFFF5F5F5),
                             src: _modelSrc!,
                             alt: 'A 3D model of ${widget.title}',
+                            debugLogging: true,
                             ar: true,
                             arModes: const ['scene-viewer', 'webxr', 'quick-look'],
                             autoRotate: true,
