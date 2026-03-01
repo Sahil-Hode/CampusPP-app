@@ -1,9 +1,6 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:http/http.dart' as http;
 import 'package:model_viewer_plus/model_viewer_plus.dart';
-import 'package:path_provider/path_provider.dart';
 
 class ARModelDetailPage extends StatefulWidget {
   final String modelPath;
@@ -22,7 +19,7 @@ class ARModelDetailPage extends StatefulWidget {
 class _ARModelDetailPageState extends State<ARModelDetailPage> {
   bool _isModelLoaded = false;
   bool _hasError = false;
-  String? _localModelPath;
+  String? _modelSrc;
   String _errorMessage = '';
 
   @override
@@ -36,43 +33,29 @@ class _ARModelDetailPageState extends State<ARModelDetailPage> {
       widget.modelPath.startsWith('https://');
 
   Future<void> _prepareModel() async {
-    if (_isRemoteUrl) {
-      // Download remote model to local file so ModelViewer can load it
-      try {
-        final response = await http.get(Uri.parse(widget.modelPath));
-        if (response.statusCode == 200) {
-          final dir = await getTemporaryDirectory();
-          final fileName =
-              'ar_model_${DateTime.now().millisecondsSinceEpoch}.glb';
-          final file = File('${dir.path}/$fileName');
-          await file.writeAsBytes(response.bodyBytes);
+    if (widget.modelPath.isEmpty) {
+      if (mounted) {
+        setState(() {
+          _hasError = true;
+          _errorMessage = 'No model URL available. The model may still be processing.';
+        });
+      }
+      return;
+    }
 
-          if (mounted) {
-            setState(() {
-              _localModelPath = file.path;
-              _isModelLoaded = true;
-            });
-          }
-        } else {
-          if (mounted) {
-            setState(() {
-              _hasError = true;
-              _errorMessage = 'Failed to download model (${response.statusCode})';
-            });
-          }
-        }
-      } catch (e) {
-        if (mounted) {
-          setState(() {
-            _hasError = true;
-            _errorMessage = 'Error loading model: ${e.toString().replaceAll("Exception: ", "")}';
-          });
-        }
+    if (_isRemoteUrl) {
+      // Use the remote URL directly — model_viewer_plus handles HTTP URLs natively
+      // This avoids the Android WebView file:// security restriction
+      if (mounted) {
+        setState(() {
+          _modelSrc = widget.modelPath;
+          _isModelLoaded = true;
+        });
       }
     } else {
       // Local asset — ready immediately
       setState(() {
-        _localModelPath = widget.modelPath;
+        _modelSrc = widget.modelPath;
         _isModelLoaded = true;
       });
     }
@@ -188,12 +171,10 @@ class _ARModelDetailPageState extends State<ARModelDetailPage> {
                           ),
                         ),
                       )
-                    : _isModelLoaded && _localModelPath != null
+                    : _isModelLoaded && _modelSrc != null
                         ? ModelViewer(
                             backgroundColor: const Color(0xFFF5F5F5),
-                            src: _isRemoteUrl
-                                ? 'file://$_localModelPath'
-                                : _localModelPath!,
+                            src: _modelSrc!,
                             alt: 'A 3D model of ${widget.title}',
                             ar: true,
                             arModes: const ['scene-viewer', 'webxr', 'quick-look'],
@@ -218,7 +199,7 @@ class _ARModelDetailPageState extends State<ARModelDetailPage> {
                                 ),
                                 const SizedBox(height: 16),
                                 Text(
-                                  'Downloading 3D Model...',
+                                  'Loading 3D Model...',
                                   style: GoogleFonts.poppins(
                                     fontWeight: FontWeight.bold,
                                     fontSize: 13,

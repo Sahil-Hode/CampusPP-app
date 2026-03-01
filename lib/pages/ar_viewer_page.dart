@@ -10,12 +10,14 @@ import '../services/ar_generation_service.dart';
 import 'ar_model_detail_page.dart';
 
 class ARModelItem {
+  final String? id; // MongoDB _id from backend
   final String title;
   final String path;
   final IconData icon;
   final Color color;
 
   ARModelItem({
+    this.id,
     required this.title,
     required this.path,
     required this.icon,
@@ -23,16 +25,30 @@ class ARModelItem {
   });
 
   Map<String, dynamic> toJson() => {
+    if (id != null) 'id': id,
     'title': title,
     'path': path,
   };
 
+  /// Parse from backend API response (GET /api/tripo3d/models)
+  factory ARModelItem.fromApiJson(Map<String, dynamic> json) {
+    return ARModelItem(
+      id: json['_id']?.toString() ?? json['id']?.toString(),
+      title: json['name'] ?? json['title'] ?? 'Untitled Model',
+      path: json['pbrModel'] ?? json['modelUrl'] ?? json['renderedImage'] ?? json['path'] ?? '',
+      icon: Icons.view_in_ar,
+      color: const Color(0xFFFBE7C6),
+    );
+  }
+
+  /// Parse from local SharedPreferences JSON
   factory ARModelItem.fromJson(Map<String, dynamic> json) {
     return ARModelItem(
+      id: json['id'],
       title: json['title'],
       path: json['path'],
       icon: Icons.view_in_ar,
-      color: const Color(0xFFFBE7C6), // Light color for generated items
+      color: const Color(0xFFFBE7C6),
     );
   }
 }
@@ -58,17 +74,34 @@ class _ARViewerPageState extends State<ARViewerPage> {
   @override
   void initState() {
     super.initState();
-    _loadSavedModels();
+    _loadModelsFromBackend();
   }
 
-  Future<void> _loadSavedModels() async {
+  /// Fetch all models from the backend API (GET /api/tripo3d/models)
+  /// Falls back to SharedPreferences if backend is unreachable
+  Future<void> _loadModelsFromBackend() async {
+    try {
+      final apiModels = await ARGenerationService.getAllModels();
+      if (mounted && apiModels.isNotEmpty) {
+        setState(() {
+          models.addAll(
+            apiModels.map((item) => ARModelItem.fromApiJson(item)).toList(),
+          );
+        });
+      }
+    } catch (_) {
+      // Fallback to locally saved models if backend is unreachable
+      await _loadSavedModelsFromPrefs();
+    }
+  }
+
+  Future<void> _loadSavedModelsFromPrefs() async {
     final prefs = await SharedPreferences.getInstance();
     final String? modelsJson = prefs.getString('saved_ar_models');
     if (modelsJson != null) {
       final List<dynamic> decoded = jsonDecode(modelsJson);
       if (mounted) {
         setState(() {
-          // Add saved models to the list, keeping Solar System first
           models.addAll(decoded.map((item) => ARModelItem.fromJson(item)).toList());
         });
       }
@@ -76,27 +109,99 @@ class _ARViewerPageState extends State<ARViewerPage> {
   }
 
   Future<void> _saveModel(ARModelItem newModel) async {
+    // Save locally as fallback cache
     final prefs = await SharedPreferences.getInstance();
-    
-    // Get existing to prevent overwriting
+
     List<ARModelItem> currentSaved = [];
     final String? existingModelsStr = prefs.getString('saved_ar_models');
-    
+
     if (existingModelsStr != null) {
       final List<dynamic> decoded = jsonDecode(existingModelsStr);
       currentSaved = decoded.map((item) => ARModelItem.fromJson(item)).toList();
     }
-    
+
     currentSaved.add(newModel);
-    
-    // Save back to prefs
-    final String encoded = jsonEncode(currentSaved.map((m) => m.toJson()).toList());
+
+    final String encoded =
+        jsonEncode(currentSaved.map((m) => m.toJson()).toList());
     await prefs.setString('saved_ar_models', encoded);
-    
+
     if (mounted) {
       setState(() {
         models.add(newModel);
       });
+    }
+  }
+
+  /// Delete a model from the backend and local list
+  Future<void> _deleteModel(int index) async {
+    final model = models[index];
+
+    // Don't allow deleting the built-in Solar System model
+    if (model.id == null && model.path.startsWith('assets/')) return;
+
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Delete Model',
+            style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
+        content: Text('Are you sure you want to delete "${model.title}"?',
+            style: GoogleFonts.poppins()),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text('Cancel', style: GoogleFonts.poppins()),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12)),
+            ),
+            child:
+                Text('Delete', style: GoogleFonts.poppins(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true) return;
+
+    try {
+      // Delete from backend if we have a MongoDB _id
+      if (model.id != null) {
+        await ARGenerationService.deleteModel(model.id!);
+      }
+
+      // Remove from local list
+      setState(() {
+        models.removeAt(index);
+      });
+
+      // Update SharedPreferences cache
+      final prefs = await SharedPreferences.getInstance();
+      final localModels =
+          models.where((m) => !m.path.startsWith('assets/')).toList();
+      final String encoded =
+          jsonEncode(localModels.map((m) => m.toJson()).toList());
+      await prefs.setString('saved_ar_models', encoded);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+              content: Text('${model.title} deleted',
+                  style: GoogleFonts.poppins())),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+              content: Text(
+                  'Failed to delete: ${e.toString().replaceAll("Exception: ", "")}')),
+        );
+      }
     }
   }
 
@@ -218,13 +323,19 @@ class _ARViewerPageState extends State<ARViewerPage> {
         return;
       }
 
-      final modelUrl = await ARGenerationService.generateModelFromImage(tempFile);
+      final result = await ARGenerationService.generateModelFromImage(
+        tempFile,
+        name: modelTitle,
+      );
       
       if (!mounted) return;
-      if (modelUrl != null) {
+      if (result != null) {
+        final modelUrl = result['pbrModel'] ?? result['modelUrl'] ?? result['renderedImage'] ?? '';
+        final modelId = result['_id']?.toString() ?? result['id']?.toString();
         
-        // Ensure to save the new model forever!
+        // Save the new model
         final newModel = ARModelItem(
+          id: modelId,
           title: modelTitle,
           path: modelUrl,
           icon: Icons.view_in_ar,
@@ -297,28 +408,40 @@ class _ARViewerPageState extends State<ARViewerPage> {
           children: [
             Padding(
               padding: const EdgeInsets.all(20.0),
-              child: GridView.builder(
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
-                  mainAxisSpacing: 16,
-                  crossAxisSpacing: 16,
-                  childAspectRatio: 0.85, // Makes the grid items slightly taller
-                ),
-                itemCount: models.length,
-                itemBuilder: (context, index) {
-                  final model = models[index];
-                  return GestureDetector(
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => ARModelDetailPage(
-                            modelPath: model.path,
-                            title: model.title,
+              child: RefreshIndicator(
+                color: Colors.black,
+                onRefresh: () async {
+                  setState(() {
+                    // Keep only the built-in Solar System model
+                    models.removeWhere((m) => !m.path.startsWith('assets/'));
+                  });
+                  await _loadModelsFromBackend();
+                },
+                child: GridView.builder(
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    mainAxisSpacing: 16,
+                    crossAxisSpacing: 16,
+                    childAspectRatio: 0.85,
+                  ),
+                  itemCount: models.length,
+                  itemBuilder: (context, index) {
+                    final model = models[index];
+                    return GestureDetector(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => ARModelDetailPage(
+                              modelPath: model.path,
+                              title: model.title,
+                            ),
                           ),
-                        ),
-                      );
-                    },
+                        );
+                      },
+                      onLongPress: model.path.startsWith('assets/')
+                          ? null
+                          : () => _deleteModel(index),
                     child: Container(
                       decoration: BoxDecoration(
                         color: model.color,
@@ -362,6 +485,7 @@ class _ARViewerPageState extends State<ARViewerPage> {
                     ),
                   );
                 },
+              ),
               ),
             ),
             if (_isLoading)
