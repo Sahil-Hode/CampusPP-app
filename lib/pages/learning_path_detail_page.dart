@@ -440,171 +440,105 @@ class _LearningPathDetailPageState extends State<LearningPathDetailPage> {
                     ),
                     const SizedBox(height: 16),
 
-                    // Learning Resources — 2-column grid: Docs | YouTube
+                    // Learning Resources — Two buttons: Docs | YouTube
                     if (data.resources.isNotEmpty) ...[
                       LayoutBuilder(
                         builder: (context, constraints) {
                           final cardWidth = constraints.maxWidth;
                           final iconSize = (cardWidth * 0.09).clamp(28.0, 40.0);
-                          final labelFont = (cardWidth * 0.032).clamp(10.0, 13.0);
-                          final headerFont = (cardWidth * 0.035).clamp(12.0, 15.0);
-                          final padding = (cardWidth * 0.035).clamp(10.0, 16.0);
+                          final labelFont = (cardWidth * 0.038).clamp(12.0, 16.0);
                           final gap = (cardWidth * 0.03).clamp(8.0, 14.0);
 
                           final docs = data.resources.where((r) => !r.isYouTube).toList();
                           final videos = data.resources.where((r) => r.isYouTube).toList();
 
-                          Widget buildResourceTile(LearningResource res, bool isYt) {
-                            return GestureDetector(
-                              onTap: () async {
-                                try {
-                                  final uri = Uri.parse(res.url);
-                                  await launchUrl(uri, mode: LaunchMode.externalApplication);
-                                } catch (e) {
-                                  if (context.mounted) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(content: Text('Could not open: ${res.name}')),
-                                    );
-                                  }
+                          void openResources(List<LearningResource> resources) async {
+                            for (final res in resources) {
+                              try {
+                                final uri = Uri.parse(res.url);
+                                await launchUrl(uri, mode: LaunchMode.externalApplication);
+                              } catch (e) {
+                                if (context.mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(content: Text('Could not open: ${res.name}')),
+                                  );
                                 }
-                              },
-                              child: Container(
-                                margin: EdgeInsets.only(bottom: gap * 0.5),
-                                padding: EdgeInsets.all(padding * 0.7),
-                                decoration: BoxDecoration(
-                                  color: isYt ? const Color(0xFFFFF0F0) : const Color(0xFFF0F7FF),
-                                  borderRadius: BorderRadius.circular(10),
-                                  border: Border.all(
-                                    color: isYt ? Colors.red.withOpacity(0.25) : Colors.blue.withOpacity(0.2),
-                                    width: 1.5,
-                                  ),
-                                ),
-                                child: Row(
-                                  children: [
-                                    Expanded(
-                                      child: Text(
-                                        res.name,
-                                        style: TextStyle(
-                                          fontSize: labelFont,
-                                          fontWeight: FontWeight.w600,
-                                          color: isYt ? Colors.red.shade700 : const Color(0xFF1565C0),
-                                        ),
-                                        maxLines: 2,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                    ),
-                                    SizedBox(width: gap * 0.3),
-                                    Icon(
-                                      Icons.open_in_new_rounded,
-                                      size: labelFont,
-                                      color: isYt ? Colors.red.shade300 : Colors.blue.shade300,
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            );
+                              }
+                            }
                           }
 
-                          Widget buildColumn({
+                          Widget buildButton({
                             required IconData icon,
-                            required String title,
+                            required String label,
                             required Color color,
                             required Color bgColor,
                             required List<LearningResource> resources,
-                            required bool isYt,
                           }) {
+                            final hasResources = resources.isNotEmpty;
                             return Expanded(
-                              child: Container(
-                                padding: EdgeInsets.all(padding * 0.75),
-                                decoration: BoxDecoration(
-                                  color: bgColor,
-                                  borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(color: color.withOpacity(0.3), width: 1.5),
-                                ),
-                                child: Column(
-                                  children: [
-                                    Container(
-                                      width: iconSize,
-                                      height: iconSize,
-                                      decoration: BoxDecoration(
-                                        color: color,
-                                        borderRadius: BorderRadius.circular(iconSize * 0.25),
-                                      ),
-                                      child: Center(
-                                        child: Icon(icon, size: iconSize * 0.55, color: Colors.white),
-                                      ),
+                              child: GestureDetector(
+                                onTap: hasResources ? () => openResources(resources) : null,
+                                child: Container(
+                                  padding: EdgeInsets.symmetric(vertical: gap * 1.2),
+                                  decoration: BoxDecoration(
+                                    color: hasResources ? bgColor : Colors.grey.shade200,
+                                    borderRadius: BorderRadius.circular(14),
+                                    border: Border.all(
+                                      color: hasResources ? color : Colors.grey.shade400,
+                                      width: 2,
                                     ),
-                                    SizedBox(height: gap * 0.5),
-                                    Text(
-                                      title,
-                                      style: TextStyle(
-                                        fontSize: labelFont + 1,
-                                        fontWeight: FontWeight.w800,
-                                        color: color,
-                                      ),
-                                    ),
-                                    SizedBox(height: gap * 0.6),
-                                    if (resources.isEmpty)
-                                      Text('—', style: TextStyle(fontSize: labelFont, color: Colors.black38))
-                                    else
-                                      ...resources.map((r) => buildResourceTile(r, isYt)),
-                                  ],
-                                ),
-                              ),
-                            );
-                          }
-
-                          return Container(
-                            padding: EdgeInsets.all(padding),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: Colors.black, width: 2),
-                              boxShadow: const [BoxShadow(color: Colors.black, offset: Offset(3, 3))],
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  children: [
-                                    Icon(Icons.menu_book_rounded, size: headerFont + 4, color: Colors.black87),
-                                    SizedBox(width: gap * 0.5),
-                                    Flexible(
-                                      child: Text(
-                                        'Learning Resources',
-                                        style: TextStyle(fontWeight: FontWeight.w900, fontSize: headerFont, letterSpacing: 0.5),
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                SizedBox(height: gap),
-                                IntrinsicHeight(
-                                  child: Row(
-                                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                                    boxShadow: hasResources
+                                        ? [BoxShadow(color: color.withOpacity(0.3), offset: const Offset(2, 2))]
+                                        : [],
+                                  ),
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
                                     children: [
-                                      buildColumn(
-                                        icon: Icons.description_rounded,
-                                        title: 'Docs',
-                                        color: const Color(0xFF1565C0),
-                                        bgColor: const Color(0xFFE3F2FD),
-                                        resources: docs,
-                                        isYt: false,
+                                      Container(
+                                        width: iconSize,
+                                        height: iconSize,
+                                        decoration: BoxDecoration(
+                                          color: hasResources ? color : Colors.grey,
+                                          borderRadius: BorderRadius.circular(iconSize * 0.25),
+                                        ),
+                                        child: Center(
+                                          child: Icon(icon, size: iconSize * 0.55, color: Colors.white),
+                                        ),
                                       ),
-                                      SizedBox(width: gap),
-                                      buildColumn(
-                                        icon: Icons.play_circle_filled_rounded,
-                                        title: 'YouTube',
-                                        color: Colors.red,
-                                        bgColor: const Color(0xFFFFEBEE),
-                                        resources: videos,
-                                        isYt: true,
+                                      SizedBox(height: gap * 0.5),
+                                      Text(
+                                        label,
+                                        style: TextStyle(
+                                          fontSize: labelFont,
+                                          fontWeight: FontWeight.w800,
+                                          color: hasResources ? color : Colors.grey,
+                                        ),
                                       ),
                                     ],
                                   ),
                                 ),
-                              ],
-                            ),
+                              ),
+                            );
+                          }
+
+                          return Row(
+                            children: [
+                              buildButton(
+                                icon: Icons.description_rounded,
+                                label: 'Docs',
+                                color: const Color(0xFF1565C0),
+                                bgColor: const Color(0xFFE3F2FD),
+                                resources: docs,
+                              ),
+                              SizedBox(width: gap),
+                              buildButton(
+                                icon: Icons.play_circle_filled_rounded,
+                                label: 'YouTube',
+                                color: Colors.red,
+                                bgColor: const Color(0xFFFFEBEE),
+                                resources: videos,
+                              ),
+                            ],
                           );
                         },
                       ),
