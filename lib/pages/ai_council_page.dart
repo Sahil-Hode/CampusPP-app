@@ -60,21 +60,9 @@ class _AiCouncilScreenState extends State<AiCouncilScreen>
     try {
       final token = await AuthService.getToken();
       
-      if (!forceRegenerate) {
-        final headers = {
-          'Authorization': 'Bearer $token',
-          'Accept': 'application/json',
-        };
-        
-        final res = await http.get(Uri.parse(baseUrl), headers: headers);
-        if (res.statusCode == 200) {
-          final data = jsonDecode(res.body)['data'];
-          _animCtrl.forward();
-          return data;
-        }
-      }
-
-      // Explicitly trigger the /generate endpoint with the regenerate payload
+      // Always call POST /generate so backend checks freshness
+      // With regenerate: true → forces new AI analysis (after quiz/data change)
+      // With regenerate: false → returns cached if < 6 hours old, else generates new
       final gen = await http.post(
         Uri.parse('$baseUrl/generate'),
         body: jsonEncode({"regenerate": forceRegenerate}),
@@ -83,9 +71,28 @@ class _AiCouncilScreenState extends State<AiCouncilScreen>
           'Content-Type': 'application/json',
         },
       );
-      final data = jsonDecode(gen.body)['data'];
-      _animCtrl.forward();
-      return data;
+
+      if (gen.statusCode == 200 || gen.statusCode == 201) {
+        final data = jsonDecode(gen.body)['data'];
+        _animCtrl.forward();
+        return data;
+      }
+
+      // Fallback: try GET if generate fails for some reason
+      final res = await http.get(
+        Uri.parse('$baseUrl?t=${DateTime.now().millisecondsSinceEpoch}'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Accept': 'application/json',
+        },
+      );
+      if (res.statusCode == 200) {
+        final data = jsonDecode(res.body)['data'];
+        _animCtrl.forward();
+        return data;
+      }
+
+      throw Exception('Failed to load council data');
     } catch (e) {
       rethrow;
     }
@@ -160,7 +167,7 @@ class _AiCouncilScreenState extends State<AiCouncilScreen>
                   _Header(
                     onRefresh: () => setState(() {
                       _animCtrl.reset();
-                      _councilFuture = _fetchCouncil();
+                      _councilFuture = _fetchCouncil(forceRegenerate: true);
                     }),
                     onRegenerate: () => setState(() {
                       _animCtrl.reset();
@@ -268,7 +275,7 @@ class _StabilityCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final score = (stability['stabilityScore'] as num?)?.toDouble() ?? 85.5;
+    final score = (stability['stabilityScore'] as num?)?.toDouble() ?? 0;
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: brutalBox(_greenCard),
@@ -334,23 +341,44 @@ class _MetricsRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final failureRisk  = stability['finalRisk']  ?? '15';
-    final confidence   = stability['predictionConfidence']   ?? '70';
+    final failureRisk  = (stability['finalRisk'] as num?)?.toDouble() ?? 0;
+    final confidence   = (stability['predictionConfidence'] as num?)?.toDouble() ?? 0;
+
+    // Dynamic sub-labels based on actual values
+    String riskLabel;
+    if (failureRisk >= 70) {
+      riskLabel = 'Critical';
+    } else if (failureRisk >= 40) {
+      riskLabel = 'High Risk';
+    } else if (failureRisk >= 20) {
+      riskLabel = 'Moderate';
+    } else {
+      riskLabel = 'Low Risk';
+    }
+
+    String confLabel;
+    if (confidence >= 80) {
+      confLabel = 'High';
+    } else if (confidence >= 50) {
+      confLabel = 'Moderate';
+    } else {
+      confLabel = 'Low';
+    }
 
     return Row(
       children: [
         Expanded(child: _MetricCard(
           label: "Failure Risk",
-          value: "$failureRisk%",
-          sub: "Low Risk",
+          value: "${failureRisk.toStringAsFixed(0)}%",
+          sub: riskLabel,
           icon: Icons.warning_amber_rounded,
           color: _yellow,
         )),
         const SizedBox(width: 12),
         Expanded(child: _MetricCard(
           label: "Confidence",
-          value: "$confidence%",
-          sub: "Moderate",
+          value: "${confidence.toStringAsFixed(0)}%",
+          sub: confLabel,
           icon: Icons.psychology_rounded,
           color: _purple,
         )),
