@@ -233,13 +233,17 @@ class CouncilDecisionData {
 class LearningResource {
   final String name;
   final String url;
+  final String type; // 'docs', 'yt'
 
-  LearningResource({required this.name, required this.url});
+  LearningResource({required this.name, required this.url, this.type = 'docs'});
+
+  bool get isYouTube => type == 'yt' || url.contains('youtube.com') || url.contains('youtu.be');
 
   factory LearningResource.fromJson(Map<String, dynamic> json) {
     return LearningResource(
       name: json['name']?.toString() ?? 'Resource',
       url: json['url']?.toString() ?? '',
+      type: json['type']?.toString() ?? 'docs',
     );
   }
 }

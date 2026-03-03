@@ -464,49 +464,86 @@ class _LearningPathDetailPageState extends State<LearningPathDetailPage> {
                               ],
                             ),
                             const SizedBox(height: 10),
-                            ...data.resources.map((res) => Padding(
-                              padding: const EdgeInsets.only(bottom: 8),
-                              child: GestureDetector(
-                                onTap: () async {
-                                  try {
-                                    final uri = Uri.parse(res.url);
-                                    await launchUrl(uri, mode: LaunchMode.externalApplication);
-                                  } catch (e) {
-                                    if (context.mounted) {
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        SnackBar(content: Text('Could not open: ${res.name}')),
-                                      );
+                            ...data.resources.map((res) {
+                              final isYt = res.isYouTube;
+                              return Padding(
+                                padding: const EdgeInsets.only(bottom: 8),
+                                child: GestureDetector(
+                                  onTap: () async {
+                                    try {
+                                      final uri = Uri.parse(res.url);
+                                      await launchUrl(uri, mode: LaunchMode.externalApplication);
+                                    } catch (e) {
+                                      if (context.mounted) {
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          SnackBar(content: Text('Could not open: ${res.name}')),
+                                        );
+                                      }
                                     }
-                                  }
-                                },
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFFE3F2FD),
-                                    borderRadius: BorderRadius.circular(10),
-                                    border: Border.all(color: Colors.black.withOpacity(0.2), width: 1.5),
-                                  ),
-                                  child: Row(
-                                    children: [
-                                      const Icon(Icons.link_rounded, size: 16, color: Color(0xFF1565C0)),
-                                      const SizedBox(width: 8),
-                                      Expanded(
-                                        child: Text(
-                                          res.name,
-                                          style: const TextStyle(
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.w700,
-                                            color: Color(0xFF1565C0),
-                                            decoration: TextDecoration.underline,
+                                  },
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                                    decoration: BoxDecoration(
+                                      color: isYt ? const Color(0xFFFFEBEE) : const Color(0xFFE3F2FD),
+                                      borderRadius: BorderRadius.circular(10),
+                                      border: Border.all(
+                                        color: isYt ? Colors.red.withOpacity(0.3) : Colors.black.withOpacity(0.2),
+                                        width: 1.5,
+                                      ),
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        Container(
+                                          width: 30,
+                                          height: 30,
+                                          decoration: BoxDecoration(
+                                            color: isYt ? Colors.red : const Color(0xFF1565C0),
+                                            borderRadius: BorderRadius.circular(8),
+                                          ),
+                                          child: Icon(
+                                            isYt ? Icons.play_arrow_rounded : Icons.article_rounded,
+                                            size: 18,
+                                            color: Colors.white,
                                           ),
                                         ),
-                                      ),
-                                      const Icon(Icons.open_in_new, size: 14, color: Colors.black45),
-                                    ],
+                                        const SizedBox(width: 10),
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                res.name,
+                                                style: TextStyle(
+                                                  fontSize: 12,
+                                                  fontWeight: FontWeight.w700,
+                                                  color: isYt ? Colors.red.shade700 : const Color(0xFF1565C0),
+                                                ),
+                                                maxLines: 2,
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                              const SizedBox(height: 2),
+                                              Text(
+                                                isYt ? 'YouTube Video' : 'Documentation',
+                                                style: TextStyle(
+                                                  fontSize: 10,
+                                                  fontWeight: FontWeight.w600,
+                                                  color: isYt ? Colors.red.shade300 : Colors.blue.shade300,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                        Icon(
+                                          Icons.open_in_new,
+                                          size: 14,
+                                          color: isYt ? Colors.red.shade300 : Colors.black45,
+                                        ),
+                                      ],
+                                    ),
                                   ),
                                 ),
-                              ),
-                            )),
+                              );
+                            }),
                           ],
                         ),
                       ),
