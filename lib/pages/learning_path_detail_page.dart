@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../models/performance_model.dart';
 import '../services/student_service.dart';
@@ -441,112 +440,173 @@ class _LearningPathDetailPageState extends State<LearningPathDetailPage> {
                     ),
                     const SizedBox(height: 16),
 
-                    // Learning Resources
+                    // Learning Resources — 2-column grid: Docs | YouTube
                     if (data.resources.isNotEmpty) ...[
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: Colors.black, width: 2),
-                          boxShadow: const [BoxShadow(color: Colors.black, offset: Offset(3, 3))],
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Row(
+                      LayoutBuilder(
+                        builder: (context, constraints) {
+                          final cardWidth = constraints.maxWidth;
+                          final iconSize = (cardWidth * 0.09).clamp(28.0, 40.0);
+                          final labelFont = (cardWidth * 0.032).clamp(10.0, 13.0);
+                          final headerFont = (cardWidth * 0.035).clamp(12.0, 15.0);
+                          final padding = (cardWidth * 0.035).clamp(10.0, 16.0);
+                          final gap = (cardWidth * 0.03).clamp(8.0, 14.0);
+
+                          final docs = data.resources.where((r) => !r.isYouTube).toList();
+                          final videos = data.resources.where((r) => r.isYouTube).toList();
+
+                          Widget buildResourceTile(LearningResource res, bool isYt) {
+                            return GestureDetector(
+                              onTap: () async {
+                                try {
+                                  final uri = Uri.parse(res.url);
+                                  await launchUrl(uri, mode: LaunchMode.externalApplication);
+                                } catch (e) {
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(content: Text('Could not open: ${res.name}')),
+                                    );
+                                  }
+                                }
+                              },
+                              child: Container(
+                                margin: EdgeInsets.only(bottom: gap * 0.5),
+                                padding: EdgeInsets.all(padding * 0.7),
+                                decoration: BoxDecoration(
+                                  color: isYt ? const Color(0xFFFFF0F0) : const Color(0xFFF0F7FF),
+                                  borderRadius: BorderRadius.circular(10),
+                                  border: Border.all(
+                                    color: isYt ? Colors.red.withOpacity(0.25) : Colors.blue.withOpacity(0.2),
+                                    width: 1.5,
+                                  ),
+                                ),
+                                child: Row(
+                                  children: [
+                                    Expanded(
+                                      child: Text(
+                                        res.name,
+                                        style: TextStyle(
+                                          fontSize: labelFont,
+                                          fontWeight: FontWeight.w600,
+                                          color: isYt ? Colors.red.shade700 : const Color(0xFF1565C0),
+                                        ),
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                    SizedBox(width: gap * 0.3),
+                                    Icon(
+                                      Icons.open_in_new_rounded,
+                                      size: labelFont,
+                                      color: isYt ? Colors.red.shade300 : Colors.blue.shade300,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          }
+
+                          Widget buildColumn({
+                            required IconData icon,
+                            required String title,
+                            required Color color,
+                            required Color bgColor,
+                            required List<LearningResource> resources,
+                            required bool isYt,
+                          }) {
+                            return Expanded(
+                              child: Container(
+                                padding: EdgeInsets.all(padding * 0.75),
+                                decoration: BoxDecoration(
+                                  color: bgColor,
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(color: color.withOpacity(0.3), width: 1.5),
+                                ),
+                                child: Column(
+                                  children: [
+                                    Container(
+                                      width: iconSize,
+                                      height: iconSize,
+                                      decoration: BoxDecoration(
+                                        color: color,
+                                        borderRadius: BorderRadius.circular(iconSize * 0.25),
+                                      ),
+                                      child: Center(
+                                        child: Icon(icon, size: iconSize * 0.55, color: Colors.white),
+                                      ),
+                                    ),
+                                    SizedBox(height: gap * 0.5),
+                                    Text(
+                                      title,
+                                      style: TextStyle(
+                                        fontSize: labelFont + 1,
+                                        fontWeight: FontWeight.w800,
+                                        color: color,
+                                      ),
+                                    ),
+                                    SizedBox(height: gap * 0.6),
+                                    if (resources.isEmpty)
+                                      Text('—', style: TextStyle(fontSize: labelFont, color: Colors.black38))
+                                    else
+                                      ...resources.map((r) => buildResourceTile(r, isYt)),
+                                  ],
+                                ),
+                              ),
+                            );
+                          }
+
+                          return Container(
+                            padding: EdgeInsets.all(padding),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: Colors.black, width: 2),
+                              boxShadow: const [BoxShadow(color: Colors.black, offset: Offset(3, 3))],
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Icon(Icons.menu_book_rounded, size: 18, color: Colors.black87),
-                                SizedBox(width: 6),
-                                Text(
-                                  'Learning Resources',
-                                  style: TextStyle(fontWeight: FontWeight.w900, fontSize: 13, letterSpacing: 0.5),
+                                Row(
+                                  children: [
+                                    Icon(Icons.menu_book_rounded, size: headerFont + 4, color: Colors.black87),
+                                    SizedBox(width: gap * 0.5),
+                                    Flexible(
+                                      child: Text(
+                                        'Learning Resources',
+                                        style: TextStyle(fontWeight: FontWeight.w900, fontSize: headerFont, letterSpacing: 0.5),
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                SizedBox(height: gap),
+                                IntrinsicHeight(
+                                  child: Row(
+                                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                                    children: [
+                                      buildColumn(
+                                        icon: Icons.description_rounded,
+                                        title: 'Docs',
+                                        color: const Color(0xFF1565C0),
+                                        bgColor: const Color(0xFFE3F2FD),
+                                        resources: docs,
+                                        isYt: false,
+                                      ),
+                                      SizedBox(width: gap),
+                                      buildColumn(
+                                        icon: Icons.play_circle_filled_rounded,
+                                        title: 'YouTube',
+                                        color: Colors.red,
+                                        bgColor: const Color(0xFFFFEBEE),
+                                        resources: videos,
+                                        isYt: true,
+                                      ),
+                                    ],
+                                  ),
                                 ),
                               ],
                             ),
-                            const SizedBox(height: 10),
-                            ...data.resources.map((res) {
-                              final isYt = res.isYouTube;
-                              return Padding(
-                                padding: const EdgeInsets.only(bottom: 8),
-                                child: GestureDetector(
-                                  onTap: () async {
-                                    try {
-                                      final uri = Uri.parse(res.url);
-                                      await launchUrl(uri, mode: LaunchMode.externalApplication);
-                                    } catch (e) {
-                                      if (context.mounted) {
-                                        ScaffoldMessenger.of(context).showSnackBar(
-                                          SnackBar(content: Text('Could not open: ${res.name}')),
-                                        );
-                                      }
-                                    }
-                                  },
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                                    decoration: BoxDecoration(
-                                      color: isYt ? const Color(0xFFFFEBEE) : const Color(0xFFE3F2FD),
-                                      borderRadius: BorderRadius.circular(10),
-                                      border: Border.all(
-                                        color: isYt ? Colors.red.withOpacity(0.3) : Colors.black.withOpacity(0.2),
-                                        width: 1.5,
-                                      ),
-                                    ),
-                                    child: Row(
-                                      children: [
-                                        Container(
-                                          width: 30,
-                                          height: 30,
-                                          decoration: BoxDecoration(
-                                            color: isYt ? Colors.red : const Color(0xFF1565C0),
-                                            borderRadius: BorderRadius.circular(8),
-                                          ),
-                                          child: FaIcon(
-                                            isYt ? FontAwesomeIcons.youtube : FontAwesomeIcons.bookOpen,
-                                            size: 16,
-                                            color: Colors.white,
-                                          ),
-                                        ),
-                                        const SizedBox(width: 10),
-                                        Expanded(
-                                          child: Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
-                                            children: [
-                                              Text(
-                                                res.name,
-                                                style: TextStyle(
-                                                  fontSize: 12,
-                                                  fontWeight: FontWeight.w700,
-                                                  color: isYt ? Colors.red.shade700 : const Color(0xFF1565C0),
-                                                ),
-                                                maxLines: 2,
-                                                overflow: TextOverflow.ellipsis,
-                                              ),
-                                              const SizedBox(height: 2),
-                                              Text(
-                                                isYt ? 'YouTube Video' : 'Documentation',
-                                                style: TextStyle(
-                                                  fontSize: 10,
-                                                  fontWeight: FontWeight.w600,
-                                                  color: isYt ? Colors.red.shade300 : Colors.blue.shade300,
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                        Icon(
-                                          Icons.open_in_new,
-                                          size: 14,
-                                          color: isYt ? Colors.red.shade300 : Colors.black45,
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              );
-                            }),
-                          ],
-                        ),
+                          );
+                        },
                       ),
                       const SizedBox(height: 12),
                     ],
