@@ -47,7 +47,7 @@ class _AiCouncilScreenState extends State<AiCouncilScreen>
     super.initState();
     _animCtrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 600));
     _fadeAnim = CurvedAnimation(parent: _animCtrl, curve: Curves.easeOut);
-    _councilFuture = _fetchCouncil();
+    _councilFuture = _fetchCouncil(forceRegenerate: true);
   }
 
   @override

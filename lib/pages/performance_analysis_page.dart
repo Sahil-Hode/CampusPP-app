@@ -331,46 +331,67 @@ class _PerformanceAnalysisPageState extends State<PerformanceAnalysisPage> {
     final simList = predictive['impactSimulator'] as List<dynamic>? ?? [];
     if (simList.isEmpty) return const SizedBox.shrink();
 
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: brutalBox(_navy),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text("What-If Impact Simulator",
-              style: GoogleFonts.poppins(fontWeight: FontWeight.w900, color: _white, fontSize: 13)),
-          const SizedBox(height: 12),
-          ...simList.map((item) {
-            final metric = item['metric'] ?? 'Metric';
-            final target = item['targetValue'] ?? '100%';
-            final oldRisk = item['currentRisk'] ?? '0';
-            final newRisk = item['projectedRisk'] ?? '0';
-            final impact = item['riskReduction'] ?? '0';
-            return Container(
-              margin: const EdgeInsets.only(bottom: 8),
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-              decoration: brutalBox(_white, radius: 8, shadow: 0),
-              child: Row(
-                children: [
-                  const Icon(Icons.bar_chart, size: 14, color: _black),
-                  const SizedBox(width: 6),
-                  Text("If $metric → $target",
-                      style: GoogleFonts.poppins(fontWeight: FontWeight.w700, fontSize: 11)),
-                  const Spacer(),
-                  Text("Risk: $oldRisk → $newRisk%",
-                      style: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 10, color: Colors.black54)),
-                  const SizedBox(width: 8),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    decoration: BoxDecoration(color: _green, borderRadius: BorderRadius.circular(4), border: Border.all(color: _black)),
-                    child: Text("-$impact%", style: GoogleFonts.poppins(fontWeight: FontWeight.w900, fontSize: 10)),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final w = constraints.maxWidth;
+        final titleFont = (w * 0.035).clamp(11.0, 15.0);
+        final labelFont = (w * 0.028).clamp(9.0, 12.0);
+        final riskFont = (w * 0.025).clamp(8.0, 11.0);
+        final badgeFont = (w * 0.026).clamp(8.0, 11.0);
+        final pad = (w * 0.04).clamp(10.0, 18.0);
+        final iconSz = (w * 0.035).clamp(10.0, 16.0);
+        final gap = (w * 0.015).clamp(4.0, 8.0);
+
+        return Container(
+          padding: EdgeInsets.all(pad),
+          decoration: brutalBox(_navy),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text("What-If Impact Simulator",
+                  style: GoogleFonts.poppins(fontWeight: FontWeight.w900, color: _white, fontSize: titleFont)),
+              SizedBox(height: pad * 0.75),
+              ...simList.map((item) {
+                final metric = item['metric'] ?? 'Metric';
+                final target = item['targetValue'] ?? '100%';
+                final oldRisk = item['currentRisk'] ?? '0';
+                final newRisk = item['projectedRisk'] ?? '0';
+                final impact = item['riskReduction'] ?? '0';
+                return Container(
+                  margin: EdgeInsets.only(bottom: gap),
+                  padding: EdgeInsets.symmetric(horizontal: pad * 0.7, vertical: pad * 0.6),
+                  decoration: brutalBox(_white, radius: 8, shadow: 0),
+                  child: Row(
+                    children: [
+                      Icon(Icons.bar_chart, size: iconSz, color: _black),
+                      SizedBox(width: gap),
+                      Expanded(
+                        child: Text(
+                          "If $metric → $target",
+                          style: GoogleFonts.poppins(fontWeight: FontWeight.w700, fontSize: labelFont),
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 1,
+                        ),
+                      ),
+                      SizedBox(width: gap),
+                      Text(
+                        "Risk: $oldRisk → $newRisk%",
+                        style: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: riskFont, color: Colors.black54),
+                      ),
+                      SizedBox(width: gap),
+                      Container(
+                        padding: EdgeInsets.symmetric(horizontal: gap, vertical: 2),
+                        decoration: BoxDecoration(color: _green, borderRadius: BorderRadius.circular(4), border: Border.all(color: _black)),
+                        child: Text("-$impact%", style: GoogleFonts.poppins(fontWeight: FontWeight.w900, fontSize: badgeFont)),
+                      ),
+                    ],
                   ),
-                ],
-              ),
-            );
-          }),
-        ],
-      ),
+                );
+              }),
+            ],
+          ),
+        );
+      },
     );
   }
 
