@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../models/performance_model.dart';
 import '../services/student_service.dart';
@@ -500,9 +501,9 @@ class _LearningPathDetailPageState extends State<LearningPathDetailPage> {
                                             color: isYt ? Colors.red : const Color(0xFF1565C0),
                                             borderRadius: BorderRadius.circular(8),
                                           ),
-                                          child: Icon(
-                                            isYt ? Icons.play_arrow_rounded : Icons.article_rounded,
-                                            size: 18,
+                                          child: FaIcon(
+                                            isYt ? FontAwesomeIcons.youtube : FontAwesomeIcons.bookOpen,
+                                            size: 16,
                                             color: Colors.white,
                                           ),
                                         ),
