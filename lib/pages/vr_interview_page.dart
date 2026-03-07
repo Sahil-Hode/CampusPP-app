@@ -1,8 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:flutter_inappwebview/flutter_inappwebview.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:flutter_unity_widget_2/flutter_unity_widget_2.dart';
 import '../services/auth_service.dart';
 import '../services/student_service.dart';
 
@@ -14,98 +13,73 @@ class VRInterviewPage extends StatefulWidget {
 }
 
 class _VRInterviewPageState extends State<VRInterviewPage> {
-  final localhostServer = InAppLocalhostServer(documentRoot: 'assets');
-  bool _isInit = false;
-  String _statusMessage = "Initializing Localhost Server...";
+  UnityWidgetController? _unityWidgetController;
 
   @override
   void initState() {
     super.initState();
-    _initServices();
-  }
-
-  Future<void> _initServices() async {
-    try {
-      if (!localhostServer.isRunning()) {
-        await localhostServer.start();
-      }
-      _setStatus("Ready to launch in Chrome");
-      if (mounted) setState(() => _isInit = true);
-    } catch (e) {
-      _setStatus("Failed to init: \$e");
-    }
-  }
-
-  void _setStatus(String msg) {
-    if (mounted) setState(() => _statusMessage = msg);
-  }
-
-  Future<void> _launchInBrowser() async {
-    final token = await AuthService.getToken() ?? "";
-    _setStatus("Launching Chrome...");
-    
-    final uri = Uri.parse("http://localhost:8080/html-model/index.html?token=$token");
-    
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
-    } else {
-      _setStatus("Could not launch Browser.");
-    }
   }
 
   @override
   void dispose() {
-    localhostServer.close();
+    _unityWidgetController?.dispose();
     super.dispose();
+  }
+
+  void _onUnityCreated(controller) {
+    _unityWidgetController = controller;
+  }
+
+  void onUnityMessage(message) {
+    print('Received message from unity: ${message.toString()}');
+  }
+
+  void onUnitySceneLoaded(SceneLoaded? scene) {
+    if (scene != null) {
+      print('Received scene loaded from unity: ${scene.name}');
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.black,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.white),
-      ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.vrpano, size: 80, color: Colors.blueAccent),
-            const SizedBox(height: 24),
-            Text(
-              "WebXR Mock Interview",
-              style: GoogleFonts.poppins(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
+      body: Stack(
+        children: [
+          UnityWidget(
+            onUnityCreated: _onUnityCreated,
+            onUnityMessage: onUnityMessage,
+            onUnitySceneLoaded: onUnitySceneLoaded,
+            useAndroidViewSurface: false,
+            borderRadius: const BorderRadius.all(Radius.circular(0)),
+          ),
+          Positioned(
+            top: 40,
+            left: 10,
+            child: IconButton(
+              icon: const Icon(Icons.arrow_back, color: Colors.white, size: 30),
+              onPressed: () => Navigator.of(context).pop(),
             ),
-            const SizedBox(height: 12),
-            Text(
-              "VR mode requires launching in a full browser\nlike Google Chrome to access WebXR features.",
-              textAlign: TextAlign.center,
-              style: GoogleFonts.poppins(color: Colors.blue[200], fontSize: 14),
-            ),
-            const SizedBox(height: 48),
-            if (!_isInit)
-              const CircularProgressIndicator()
-            else
-              ElevatedButton.icon(
-                onPressed: _launchInBrowser,
-                icon: const Icon(Icons.open_in_browser),
-                label: const Text("Launch in external Browser"),
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-                  backgroundColor: Colors.blueAccent,
-                  foregroundColor: Colors.white,
-                  textStyle: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.bold),
-                ),
+          ),
+          Positioned(
+            bottom: 30,
+            left: 20,
+            right: 20,
+            child: Container(
+              padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+              decoration: BoxDecoration(
+                color: Colors.black.withOpacity(0.7),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: Colors.white24),
               ),
-            const SizedBox(height: 16),
-            Text(
-              _statusMessage,
-              style: GoogleFonts.poppins(color: Colors.grey, fontSize: 12),
+              child: Text(
+                "3D Interview Environment Active\nLook around and interact",
+                textAlign: TextAlign.center,
+                style: GoogleFonts.poppins(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w500),
+              ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

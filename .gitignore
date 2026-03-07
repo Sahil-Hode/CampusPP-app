@@ -48,3 +48,14 @@ app.*.map.json
 .env
 .env.*
 node_modules/
+
+# Ignore heavy Unity exported artifacts
+android/unityLibrary/build/
+android/unityLibrary/.utmp/
+android/unityLibrary/symbols/
+android/shared/
+android/app/src/main/assets/bin/Data/resources.assets
+*.so
+*.a
+*.jar
+*.so.debug

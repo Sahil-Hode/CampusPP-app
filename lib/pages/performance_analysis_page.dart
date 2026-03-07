@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../services/student_service.dart';
 import 'ai_analysis_page.dart';
+import 'interventions_page.dart';
 
 // ─── THEME CONSTANTS ────────────────────────────────────────────────────────
 const _bg        = Color(0xFFF4F7F5);
@@ -129,6 +130,8 @@ class _PerformanceAnalysisPageState extends State<PerformanceAnalysisPage> {
                         _buildActionPlan(),
                         const SizedBox(height: 16),
                         _buildInterventionCard(),
+                        const SizedBox(height: 16),
+                        _buildInterventionsCtaButton(context),
                         const SizedBox(height: 24),
                         const _SectionTitle("TOP RECOMMENDATIONS"),
                         const SizedBox(height: 8),
@@ -632,6 +635,34 @@ class _PerformanceAnalysisPageState extends State<PerformanceAnalysisPage> {
         child: Center(
           child: Text("View Detailed AI Report",
               style: GoogleFonts.poppins(fontWeight: FontWeight.w900, fontSize: 15)),
+        ),
+      ),
+    );
+  }
+
+  // 14. Interventions Page CTA Button
+  Widget _buildInterventionsCtaButton(BuildContext context) {
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const InterventionsPage()),
+        );
+      },
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        decoration: brutalBox(const Color(0xFFA8E6CF), radius: 100, shadow: 4),
+        child: Center(
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.psychology_outlined, color: _black, size: 20),
+              const SizedBox(width: 8),
+              Text("AI Coaching & Interventions",
+                  style: GoogleFonts.poppins(fontWeight: FontWeight.w900, fontSize: 13, color: _black)),
+            ],
+          ),
         ),
       ),
     );
