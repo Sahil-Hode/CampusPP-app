@@ -1198,256 +1198,208 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
               Container(
                 padding: const EdgeInsets.all(24),
                 margin: const EdgeInsets.fromLTRB(20, 28, 20, 16),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(30),
-              border: Border.all(color: Colors.black, width: 4),
-              boxShadow: const [
-                BoxShadow(color: Colors.black, offset: Offset(10, 10)),
-              ],
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  width: 84,
-                  height: 84,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFFFF3E0),
-                    shape: BoxShape.circle,
-                    border: Border.all(color: Colors.black, width: 3),
-                    boxShadow: const [
-                      BoxShadow(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(30),
+                  border: Border.all(color: Colors.black, width: 4),
+                  boxShadow: const [
+                    BoxShadow(color: Colors.black, offset: Offset(10, 10)),
+                  ],
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 84,
+                      height: 84,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFE3F2FD),
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.black, width: 3),
+                        boxShadow: const [
+                          BoxShadow(
+                            color: Colors.black,
+                            offset: Offset(4, 4),
+                            blurRadius: 0,
+                          ),
+                        ],
+                      ),
+                      child: const Icon(
+                        Icons.analytics_rounded,
+                        size: 36,
                         color: Colors.black,
-                        offset: Offset(4, 4),
-                        blurRadius: 0,
                       ),
-                    ],
-                  ),
-                  child: const Icon(
-                    Icons.mic_rounded,
-                    size: 36,
-                    color: Colors.black,
-                  ),
-                ),
-                const SizedBox(height: 14),
-                Text(
-                  'VOICE INTERVIEW',
-                  style: GoogleFonts.poppins(
-                    fontSize: 24,
-                    fontWeight: FontWeight.w900,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Pick a resume source and start when you are ready.',
-                  style: GoogleFonts.poppins(
-                    fontSize: 13,
-                    color: Colors.grey[700],
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 12),
-
-                // 📄 Resume Source Section
-                Container(
-                  padding: const EdgeInsets.all(14),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(18),
-                    border: Border.all(color: Colors.black, width: 2),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Resume Source',
-                        style: GoogleFonts.poppins(
-                          fontWeight: FontWeight.w900,
-                          fontSize: 13,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      _buildResumeOption(
-                        title: 'Profile Resume',
-                        subtitle: _hasResume
-                            ? 'Saved in profile'
-                            : 'Not uploaded yet',
-                        selected: _resumeSource == 'profile',
-                        statusColor: _hasResume ? Colors.green : Colors.orange,
-                        onTap: () => setState(() => _resumeSource = 'profile'),
-                      ),
-                      const SizedBox(height: 6),
-                      _buildResumeOption(
-                        title: 'Upload New',
-                        subtitle:
-                            _resumeFileName ?? 'PDF or DOCX (this session)',
-                        selected: _resumeSource == 'upload',
-                        statusColor: const Color(0xFF64B5F6),
-                        onTap: () => setState(() => _resumeSource = 'upload'),
-                      ),
-                      const SizedBox(height: 10),
-                      if (_resumeSource == 'profile') ...[
-                        if (_isResumeUploading)
-                          const Center(
-                            child: CircularProgressIndicator(
-                              color: Colors.black,
-                            ),
-                          )
-                        else if (!_hasResume)
-                          ElevatedButton.icon(
-                            onPressed: _pickAndUploadResume,
-                            icon: const Icon(Icons.upload_file),
-                            label: const Text('UPLOAD TO PROFILE'),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.white,
-                              foregroundColor: Colors.black,
-                              minimumSize: const Size(double.infinity, 44),
-                              side: const BorderSide(
-                                color: Colors.black,
-                                width: 2,
-                              ),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
-                          )
-                        else
-                          Row(
-                            children: [
-                              const Icon(Icons.description, size: 22),
-                              const SizedBox(width: 10),
-                              Expanded(
-                                child: Text(
-                                  'Resume saved in profile',
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    overflow: TextOverflow.ellipsis,
-                                    fontSize: 13,
-                                  ),
-                                ),
-                              ),
-                              TextButton(
-                                onPressed: _pickAndUploadResume,
-                                child: const Text(
-                                  'REPLACE',
-                                  style: TextStyle(
-                                    color: Colors.black,
-                                    fontWeight: FontWeight.bold,
-                                    decoration: TextDecoration.underline,
-                                    fontSize: 12,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-
-                      ] else ...[
-                        ElevatedButton.icon(
-                          onPressed: _pickTempResume,
-                          icon: const Icon(Icons.upload_file),
-                          label: const Text('SELECT RESUME'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.white,
-                            foregroundColor: Colors.black,
-                            minimumSize: const Size(double.infinity, 44),
-                            side: const BorderSide(
-                              color: Colors.black,
-                              width: 2,
-                            ),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-
-                const SizedBox(height: 14),
-
-                ElevatedButton(
-                  onPressed:
-                      (_resumeSource == 'profile' && _hasResume) ||
-                          (_resumeSource == 'upload' && _resumePath != null)
-                      ? _startInterview
-                      : null,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor:
-                        ((_resumeSource == 'profile' && _hasResume) ||
-                            (_resumeSource == 'upload' && _resumePath != null))
-                        ? const Color(0xFF40FFA7)
-                        : Colors.grey[300],
-                    foregroundColor: Colors.black,
-                    minimumSize: const Size(double.infinity, 56),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20),
-                      side: const BorderSide(color: Colors.black, width: 3),
                     ),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        ((_resumeSource == 'profile' && _hasResume) ||
-                                (_resumeSource == 'upload' &&
-                                    _resumePath != null))
-                            ? Icons.play_arrow
-                            : Icons.lock_outline,
+                    const SizedBox(height: 14),
+                    Text(
+                      'RESUME ANALYZER',
+                      style: GoogleFonts.poppins(
+                        fontSize: 24,
+                        fontWeight: FontWeight.w900,
                       ),
-                      const SizedBox(width: 8),
-                      Flexible(
-                        child: Text(
-                          ((_resumeSource == 'profile' && _hasResume) ||
-                                  (_resumeSource == 'upload' &&
-                                      _resumePath != null))
-                              ? 'START INTERVIEW'
-                              : 'SELECT RESUME TO START',
-                          style: GoogleFonts.poppins(
-                            fontSize: MediaQuery.of(context).size.width < 380
-                                ? 13
-                                : 15,
-                            fontWeight: FontWeight.w900,
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Pick a resume source to analyze your score.',
+                      style: GoogleFonts.poppins(
+                        fontSize: 13,
+                        color: Colors.grey[700],
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 12),
+
+                    // 📄 Resume Source Section
+                    Container(
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(18),
+                        border: Border.all(color: Colors.black, width: 2),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Resume Source',
+                            style: GoogleFonts.poppins(
+                              fontWeight: FontWeight.w900,
+                              fontSize: 13,
+                            ),
                           ),
-                          textAlign: TextAlign.center,
+                          const SizedBox(height: 8),
+                          _buildResumeOption(
+                            title: 'Profile Resume',
+                            subtitle: _hasResume
+                                ? 'Saved in profile'
+                                : 'Not uploaded yet',
+                            selected: _resumeSource == 'profile',
+                            statusColor: _hasResume ? Colors.green : Colors.orange,
+                            onTap: () => setState(() => _resumeSource = 'profile'),
+                          ),
+                          const SizedBox(height: 6),
+                          _buildResumeOption(
+                            title: 'Upload New',
+                            subtitle:
+                                _resumeFileName ?? 'PDF or DOCX (this session)',
+                            selected: _resumeSource == 'upload',
+                            statusColor: const Color(0xFF64B5F6),
+                            onTap: () => setState(() => _resumeSource = 'upload'),
+                          ),
+                          const SizedBox(height: 10),
+                          if (_resumeSource == 'profile') ...[
+                            if (_isResumeUploading)
+                              const Center(
+                                child: CircularProgressIndicator(
+                                  color: Colors.black,
+                                ),
+                              )
+                            else if (!_hasResume)
+                              ElevatedButton.icon(
+                                onPressed: _pickAndUploadResume,
+                                icon: const Icon(Icons.upload_file),
+                                label: const Text('UPLOAD TO PROFILE'),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.white,
+                                  foregroundColor: Colors.black,
+                                  minimumSize: const Size(double.infinity, 44),
+                                  side: const BorderSide(
+                                    color: Colors.black,
+                                    width: 2,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                ),
+                              )
+                            else
+                              Row(
+                                children: [
+                                  const Icon(Icons.description, size: 22),
+                                  const SizedBox(width: 10),
+                                  const Expanded(
+                                    child: Text(
+                                      'Resume saved in profile',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        overflow: TextOverflow.ellipsis,
+                                        fontSize: 13,
+                                      ),
+                                    ),
+                                  ),
+                                  TextButton(
+                                    onPressed: _pickAndUploadResume,
+                                    child: const Text(
+                                      'REPLACE',
+                                      style: TextStyle(
+                                        color: Colors.black,
+                                        fontWeight: FontWeight.bold,
+                                        decoration: TextDecoration.underline,
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                          ] else ...[
+                            ElevatedButton.icon(
+                              onPressed: _pickTempResume,
+                              icon: const Icon(Icons.upload_file),
+                              label: const Text('SELECT RESUME'),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.white,
+                                foregroundColor: Colors.black,
+                                minimumSize: const Size(double.infinity, 44),
+                                side: const BorderSide(
+                                  color: Colors.black,
+                                  width: 2,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+
+                    const SizedBox(height: 14),
+
+                    if (_isAnalyzingResume)
+                      const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 14),
+                        child: Center(
+                            child: CircularProgressIndicator(color: Colors.black)),
+                      )
+                    else
+                      ElevatedButton.icon(
+                        onPressed: ((_resumeSource == 'profile' && _hasResume) ||
+                                (_resumeSource == 'upload' && _resumePath != null))
+                            ? _analyzeSelectedResume
+                            : null,
+                        icon: const Icon(Icons.analytics_outlined),
+                        label: const Text('ANALYZE AI RESUME SCORE'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor:
+                              ((_resumeSource == 'profile' && _hasResume) ||
+                                      (_resumeSource == 'upload' &&
+                                          _resumePath != null))
+                                  ? const Color(0xFFFFD54F)
+                                  : Colors.grey[300],
+                          foregroundColor: Colors.black,
+                          minimumSize: const Size(double.infinity, 56),
+                          side: const BorderSide(color: Colors.black, width: 3),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          elevation: 0,
                         ),
                       ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-          if (_isAnalyzingResume)
-            const Padding(
-              padding: EdgeInsets.only(bottom: 28),
-              child: Center(child: CircularProgressIndicator(color: Colors.black)),
-            )
-          else
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 0, 20, 28),
-              child: ElevatedButton.icon(
-                onPressed: ((_resumeSource == 'profile' && _hasResume) ||
-                            (_resumeSource == 'upload' && _resumePath != null))
-                            ? _analyzeSelectedResume : null,
-                icon: const Icon(Icons.analytics_outlined),
-                label: const Text('ANALYZE AI RESUME SCORE'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: ((_resumeSource == 'profile' && _hasResume) ||
-                                  (_resumeSource == 'upload' && _resumePath != null))
-                                  ? const Color(0xFFFFD54F) : Colors.grey[300],
-                  foregroundColor: Colors.black,
-                  minimumSize: const Size(double.infinity, 56),
-                  side: const BorderSide(color: Colors.black, width: 3),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  elevation: 0,
+                  ],
                 ),
               ),
-            ),
             ],
           ),
         ),

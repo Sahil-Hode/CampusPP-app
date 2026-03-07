@@ -28,13 +28,26 @@ class _ThreeDMentorPageState extends State<ThreeDMentorPage> {
   bool _isListening = false; // STT listening
   bool _isProcessing = false; // Backend processing
   String _text = "Press the mic and ask me anything!";
-  String _selectedLanguage = 'en-US';
-  
-  // Language Map
+  String _selectedLanguage = 'en-US'; // STT locale passed to speech_to_text plugin
+  String _selectedLangDisplayKey = 'English'; // Display name (dropdown key)
+
+  // Language Map — display name → STT locale code
+  // Rajasthani reuses hi-IN for STT (no official BCP-47 code);
+  // backend resolves 'rajasthani' → Rajasthani dialect prompt
   final Map<String, String> _languages = {
-    'English': 'en-US',
-    'Hindi': 'hi-IN',
-    'Marathi': 'mr-IN',
+    'English':    'en-US',
+    'Hindi':      'hi-IN',
+    'Marathi':    'mr-IN',
+    'Rajasthani': 'hi-IN',
+  };
+
+  // Display name → backend language key (used in socket 'language' field)
+  // Must match LANGUAGE_CONFIG aliases in the backend controller
+  static const Map<String, String> _backendLangKey = {
+    'English':    'english',
+    'Hindi':      'hindi',
+    'Marathi':    'marathi',
+    'Rajasthani': 'rajasthani',
   };
 
   @override
@@ -203,25 +216,22 @@ class _ThreeDMentorPageState extends State<ThreeDMentorPage> {
        });
     }
     
-    String languageName = (_selectedLanguage == 'hi-IN') ? "Hindi" : (_selectedLanguage == 'mr-IN' ? "Marathi" : "English");
-    
-    String systemPrompt = """You are a helpful and knowledgeable teacher named Deepak. You are mentoring a student.
-    
-    CRITICAL INSTRUCTIONS:
-    1. ALWAYS reply in $languageName. Use perfect grammar and natural phrasing.
-    2. If the user asks a general knowledge or academic question (e.g., about math, science, history), answer it accurately and concisely.
-    3. Use the provided STUDENT DATA ONLY if the user asks something personal about themselves (like their name, marks, or performance).
-    4. Keep answers under 3 sentences.
-    """;
-    
-    if (_studentContext != null) {
-      systemPrompt += "\n\nSTUDENT DATA (Use only if relevant to the question):\n$_studentContext";
-    }
+    // Resolve backend language key — backend's resolveLanguageConfig() uses this
+    final String backendLang =
+        _backendLangKey[_selectedLangDisplayKey] ?? 'english';
+
+    // Base system prompt — backend will append language-specific instructions
+    // (see buildPromptWithProfile in the backend controller)
+    const String systemPrompt =
+        'You are a helpful and knowledgeable teacher named Deepak. '
+        'You are mentoring a student. Keep answers under 3 sentences. '
+        'Use provided student data only when the user asks something personal.';
 
     _socket.emit('textMessage', {
-       'message': input,
-       'systemPrompt': systemPrompt,
-       'languageCode': _selectedLanguage
+      'message': input,
+      'systemPrompt': systemPrompt,
+      'language': backendLang,        // primary key — backend resolves dialect
+      'languageCode': _selectedLanguage, // STT locale (informational)
     });
   }
 
@@ -323,21 +333,29 @@ class _ThreeDMentorPageState extends State<ThreeDMentorPage> {
                         ),
                         child: DropdownButtonHideUnderline(
                           child: DropdownButton<String>(
-                            value: _selectedLanguage,
+                            value: _selectedLangDisplayKey,
                             isDense: true,
                             icon: const Icon(Icons.arrow_drop_down, color: Colors.black),
                             items: _languages.entries.map((entry) {
                               return DropdownMenuItem(
-                                value: entry.value,
+                                value: entry.key, // use display name as value
                                 child: Text(
                                   entry.key,
                                   style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
                                 ),
                               );
                             }).toList(),
-                            onChanged: (val) {
-                              if (val != null) {
-                                setState(() => _selectedLanguage = val);
+                            onChanged: (displayName) {
+                              if (displayName != null) {
+                                setState(() {
+                                  _selectedLangDisplayKey = displayName;
+                                  _selectedLanguage =
+                                      _languages[displayName] ?? 'en-US';
+                                });
+                                // Notify backend of language switch
+                                _socket.emit('setLanguage', {
+                                  'language': _backendLangKey[displayName] ?? 'english',
+                                });
                               }
                             },
                           ),
