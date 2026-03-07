@@ -69,13 +69,11 @@ class VRMockInterviewService {
         body: jsonEncode({
           'inputs': [text],
           'target_language_code': 'en-IN',
-          'speaker': 'meera',
-          'pitch': 0,
+          'speaker': 'rahul',
           'pace': 1.1,
-          'loudness': 1.5,
           'speech_sample_rate': 16000,
           'enable_preprocessing': true,
-          'model': 'aurora-tts'
+          'model': 'bulbul:v3'
         }),
       );
 
@@ -85,7 +83,10 @@ class VRMockInterviewService {
         if (audios.isNotEmpty) {
           final String base64Audio = audios[0].toString();
           final Uint8List bytes = base64Decode(base64Audio);
+          
+          final playComplete = _audioPlayer.onPlayerComplete.first;
           await _audioPlayer.play(BytesSource(bytes));
+          await playComplete;
         }
       } else {
         print('Sarvam TTS Error: ${response.statusCode} - ${response.body}');

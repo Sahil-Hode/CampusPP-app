@@ -65,11 +65,17 @@ class _VRInterviewPageState extends State<VRInterviewPage> {
       
       setState(() {
         _currentDialogue = aiResponse;
+      });
+
+      // Fetch and play Sarvam TTS immediately showing text
+      await _interviewService.speakSarvam(aiResponse);
+
+      setState(() {
         _isAIProcessing = false;
       });
 
-      // 4. Play Sarvam TTS
-      await _interviewService.speakSarvam(aiResponse);
+      // Auto-start listening after the AI finishes speaking
+      _startListening();
 
     } catch (e) {
       if (mounted) {
@@ -78,34 +84,49 @@ class _VRInterviewPageState extends State<VRInterviewPage> {
     }
   }
 
-  void _toggleListening() async {
-    if (!_isListening) {
-      if (await _speech.hasPermission) {
-        setState(() => _isListening = true);
-        _speech.listen(
-          onResult: (result) {
-            setState(() {
-              _currentDialogue = result.recognizedWords;
-            });
-            if (result.finalResult) {
+  void _startListening() async {
+    if (_isAIProcessing) return;
+
+    if (await _speech.hasPermission) {
+      setState(() {
+        _isListening = true;
+        _currentDialogue = "Listening...";
+      });
+      _speech.listen(
+        onResult: (result) {
+          setState(() {
+            _currentDialogue = result.recognizedWords;
+          });
+          if (result.finalResult) {
+            _speech.stop();
+            setState(() => _isListening = false);
+            if (!_isAIProcessing) {
               _handleUserResponse(result.recognizedWords);
             }
-          },
-        );
-      } else {
+          }
+        },
+      );
+    } else {
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Microphone permission required for Google STT!')),
         );
       }
-    } else {
-      _speech.stop();
-      setState(() => _isListening = false);
     }
   }
 
   Future<void> _handleUserResponse(String text) async {
-    if (text.isEmpty) return;
+    if (_isAIProcessing) return;
+
+    if (text.isEmpty) {
+        _startListening(); // Re-trigger if empty
+        return;
+    }
     
+    // Explicitly shut mic
+    _speech.stop();
+    setState(() => _isListening = false);
+
     setState(() {
       _isAIProcessing = true;
       _currentDialogue = "Mistral AI thinking...";
@@ -116,10 +137,17 @@ class _VRInterviewPageState extends State<VRInterviewPage> {
 
     setState(() {
       _currentDialogue = aiResponse;
+    });
+
+    // Fetch and play audio completely
+    await _interviewService.speakSarvam(aiResponse);
+
+    setState(() {
       _isAIProcessing = false;
     });
 
-    await _interviewService.speakSarvam(aiResponse);
+    // Loop continuously back to listening
+    _startListening();
   }
 
   @override
@@ -161,48 +189,26 @@ class _VRInterviewPageState extends State<VRInterviewPage> {
           
           // Dialogue Overlay Bottom
           Positioned(
-            bottom: 30,
+            bottom: 40,
             left: 20,
             right: 20,
             child: Container(
               padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 20),
-              decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.8),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: Colors.white24, width: 2),
-                boxShadow: [
-                  BoxShadow(color: _isListening ? Colors.green.withOpacity(0.3) : Colors.black, blurRadius: 10)
-                ]
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                   Text(
-                    _isAIProcessing ? "AI Interviewer (Typing...)" : (_isListening ? "Listening (Google STT)..." : "AI Interviewer"),
-                    style: GoogleFonts.jetBrainsMono(
-                      color: _isListening ? Colors.greenAccent : Colors.cyanAccent, 
-                      fontSize: 12, 
-                      fontWeight: FontWeight.bold
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  Text(
-                    _currentDialogue,
-                    textAlign: TextAlign.center,
-                    style: GoogleFonts.poppins(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w500),
-                  ),
-                  const SizedBox(height: 16),
-                  ElevatedButton.icon(
-                    onPressed: _isAIProcessing ? null : _toggleListening,
-                    icon: Icon(_isListening ? Icons.mic : Icons.mic_none, color: Colors.black),
-                    label: Text(_isListening ? "STOP LISTENING" : "TAP TO SPEAK"),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: _isListening ? Colors.greenAccent : Colors.white,
-                      foregroundColor: Colors.black,
-                      minimumSize: const Size(200, 45),
-                    ),
-                  )
-                ],
+              alignment: Alignment.center,
+              child: Text(
+                _currentDialogue,
+                textAlign: TextAlign.center,
+                style: GoogleFonts.poppins(
+                  color: Colors.white, 
+                  fontSize: 18, 
+                  fontWeight: FontWeight.w600,
+                  shadows: [
+                    Shadow(
+                      color: _isListening ? Colors.greenAccent.withOpacity(0.8) : Colors.cyanAccent.withOpacity(0.8),
+                      blurRadius: 10,
+                    )
+                  ]
+                ),
               ),
             ),
           ),

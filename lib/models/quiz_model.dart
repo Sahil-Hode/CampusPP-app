@@ -3,12 +3,16 @@ class QuizQuestion {
   final String question;
   final List<String> options;
   final String difficulty;
+  final String questionType;   // ✅ NEW: recall | concept | analytical
+  final String thinkingHint;   // ✅ NEW: hint to guide student reasoning
 
   QuizQuestion({
     required this.index,
     required this.question,
     required this.options,
     required this.difficulty,
+    required this.questionType,
+    required this.thinkingHint,
   });
 
   factory QuizQuestion.fromJson(Map<String, dynamic> json) {
@@ -17,6 +21,8 @@ class QuizQuestion {
       question: json['question'] ?? '',
       options: List<String>.from(json['options'] ?? []),
       difficulty: json['difficulty'] ?? 'easy',
+      questionType: json['questionType'] ?? 'recall',     // ✅ NEW
+      thinkingHint: json['thinkingHint'] ?? '',           // ✅ NEW
     );
   }
 }
