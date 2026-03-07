@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -15,6 +16,9 @@ import 'package:camera/camera.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:file_picker/file_picker.dart';
 import 'resume_upload_page.dart';
+import 'resume_analysis_result_page.dart';
+import '../services/resume_service.dart';
+import '../widgets/scanning_animation.dart';
 
 class MockInterviewPage extends StatefulWidget {
   const MockInterviewPage({super.key});
@@ -45,6 +49,7 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
   String? _resumePath;
   String? _resumeFileName;
   bool _isResumeUploading = false;
+  bool _isAnalyzingResume = false;
   bool _hasResume = false;
   String _resumeSource = 'profile'; // 'profile' or 'upload'
   String _currentText = "Welcome to your AI Mock Interview.";
@@ -113,6 +118,72 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
     _audioPlayer.onPlayerStateChanged.listen((state) {
       if (mounted) setState(() => _isSpeaking = state == PlayerState.playing);
     });
+  }
+
+  void _analyzeSelectedResume() async {
+    String? filePathToAnalyze;
+
+    if (_resumeSource == 'profile') {
+      if (_profile?.resumeText == null || _profile!.resumeText!.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('No resume text available to analyze.')),
+        );
+        return;
+      }
+      try {
+        final tempDir = await Directory.systemTemp.createTemp();
+        final tempFile = File('${tempDir.path}/profile_resume.txt');
+        await tempFile.writeAsString(_profile!.resumeText!);
+        filePathToAnalyze = tempFile.path;
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error preparing resume for analysis: $e')),
+        );
+        return;
+      }
+    } else if (_resumeSource == 'upload') {
+      if (_resumePath == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Please select a resume first.')),
+        );
+        return;
+      }
+      filePathToAnalyze = _resumePath;
+    }
+
+    if (filePathToAnalyze == null) return;
+
+    setState(() => _isAnalyzingResume = true);
+
+    try {
+      final response = await ResumeService.analyzeResume(filePathToAnalyze);
+
+      if (mounted) {
+        setState(() => _isAnalyzingResume = false);
+        if (response.data != null) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => ResumeAnalysisResultPage(data: response.data!),
+            ),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+             SnackBar(content: Text(response.message ?? 'Analysis failed')),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isAnalyzingResume = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: ${e.toString().replaceAll("Exception: ", "")}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   void _setupSocketListeners() {
@@ -1121,9 +1192,12 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
       backgroundColor: const Color(0xFFFDEFD9),
       body: Center(
         child: SingleChildScrollView(
-          child: Container(
-            padding: const EdgeInsets.all(24),
-            margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 28),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(24),
+                margin: const EdgeInsets.fromLTRB(20, 28, 20, 16),
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(30),
@@ -1268,6 +1342,7 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
                               ),
                             ],
                           ),
+
                       ] else ...[
                         ElevatedButton.icon(
                           onPressed: _pickTempResume,
@@ -1344,6 +1419,36 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
                 ),
               ],
             ),
+          ),
+          if (_isAnalyzingResume)
+            const Padding(
+              padding: EdgeInsets.only(bottom: 28),
+              child: Center(child: CircularProgressIndicator(color: Colors.black)),
+            )
+          else
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 0, 20, 28),
+              child: ElevatedButton.icon(
+                onPressed: ((_resumeSource == 'profile' && _hasResume) ||
+                            (_resumeSource == 'upload' && _resumePath != null))
+                            ? _analyzeSelectedResume : null,
+                icon: const Icon(Icons.analytics_outlined),
+                label: const Text('ANALYZE AI RESUME SCORE'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: ((_resumeSource == 'profile' && _hasResume) ||
+                                  (_resumeSource == 'upload' && _resumePath != null))
+                                  ? const Color(0xFFFFD54F) : Colors.grey[300],
+                  foregroundColor: Colors.black,
+                  minimumSize: const Size(double.infinity, 56),
+                  side: const BorderSide(color: Colors.black, width: 3),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  elevation: 0,
+                ),
+              ),
+            ),
+            ],
           ),
         ),
       ),

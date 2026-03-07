@@ -27,6 +27,7 @@ import '../models/quiz_model.dart';
 import 'ar_viewer_page.dart';
 import 'vr_interview_page.dart';
 import 'predictive_dashboard_page.dart';
+import 'code_runner_page.dart';
 
 
 import '../models/student_profile_model.dart';
@@ -509,7 +510,7 @@ class _DashboardPageState extends State<DashboardPage> {
                             color: Colors.black,
                             borderRadius: BorderRadius.circular(8),
                           ),
-                          child: Text('4', style: GoogleFonts.poppins(fontSize: 10, fontWeight: FontWeight.w800, color: Colors.white)),
+                          child: Text('3', style: GoogleFonts.poppins(fontSize: 10, fontWeight: FontWeight.w800, color: Colors.white)),
                         ),
                       ],
                     ),
@@ -522,16 +523,7 @@ class _DashboardPageState extends State<DashboardPage> {
                       physics: const NeverScrollableScrollPhysics(),
                       childAspectRatio: 1.15,
                       children: [
-                        _buildQuickActionButton(
-                          context,
-                          icon: Icons.view_in_ar,
-                          label: '3D Mentor',
-                          subtitle: 'Interactive VR',
-                          color: const Color(0xFFB2F5EA),
-                          iconBgColor: const Color(0xFF4DDBA0),
-                          textColor: Colors.black,
-                          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const ThreeDMentorPage())),
-                        ),
+
                         _buildQuickActionButton(
                           context,
                           icon: Icons.camera_alt_outlined,
@@ -707,17 +699,17 @@ class _DashboardPageState extends State<DashboardPage> {
                           textColor: Colors.black,
                           onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const MockInterviewPage())),
                         ),
+
                         _buildQuickActionButton(
                           context,
-                          icon: Icons.description_outlined,
-                          label: 'Resume',
-                          subtitle: 'AI Analyzer',
-                          color: const Color(0xFFFFCDD2),
-                          iconBgColor: const Color(0xFFE57373),
+                          icon: Icons.code,
+                          label: 'Code Runner',
+                          subtitle: 'Live IDE',
+                          color: const Color(0xFFC5CAE9),
+                          iconBgColor: const Color(0xFF5C6BC0),
                           textColor: Colors.black,
-                          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const ResumeUploadPage())),
+                          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const CodeRunnerPage())),
                         ),
-
                       ],
                     ),
                     const SizedBox(height: 24),

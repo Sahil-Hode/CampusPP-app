@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../models/performance_model.dart';
 import '../services/student_service.dart';
+import '../services/project_service.dart';
 import '../widgets/celebration_overlay.dart';
 import '../widgets/roadmap_completion_overlay.dart';
 import '../services/quiz_service.dart';
 import '../models/quiz_model.dart';
 import 'quiz_page.dart';
+import 'project_detail_page.dart';
 
 class LearningPathDetailPage extends StatefulWidget {
   final LearningPath path;
@@ -24,6 +27,7 @@ class _LearningPathDetailPageState extends State<LearningPathDetailPage> {
   int? _expandedStepIndex; // Track expanded step
   bool _showCelebration = false;
   bool _showFinalCelebration = false;
+  bool _isGeneratingProject = false;
   Map<String, QuizStatusStep> _quizStatusMap = {};
 
   @override
@@ -237,6 +241,33 @@ class _LearningPathDetailPageState extends State<LearningPathDetailPage> {
     }
   }
 
+  Future<void> _startProject() async {
+    setState(() => _isGeneratingProject = true);
+    try {
+      final data = await ProjectService.generateProject(_path.id);
+      final projectId = data['_id']?.toString() ?? data['id']?.toString() ?? '';
+      if (projectId.isEmpty) {
+        throw Exception('No project ID returned from server.');
+      }
+      if (mounted) {
+        setState(() => _isGeneratingProject = false);
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ProjectDetailPage(projectId: projectId),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isGeneratingProject = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to generate project: ${e.toString().replaceFirst("Exception:", "").trim()}')),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -282,6 +313,59 @@ class _LearningPathDetailPageState extends State<LearningPathDetailPage> {
                             ],
                           );
                         }),
+
+                        // ── START PROJECT BUTTON (visible when 100% complete) ──
+                        if (_path.progress >= 100) ...[
+                          const SizedBox(height: 30),
+                          _buildPathConnector(true),
+                          const SizedBox(height: 8),
+                          GestureDetector(
+                            onTap: _isGeneratingProject ? null : _startProject,
+                            child: Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 24),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF64B5F6),
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(color: Colors.black, width: 2.5),
+                                boxShadow: const [
+                                  BoxShadow(color: Colors.black, offset: Offset(5, 5)),
+                                ],
+                              ),
+                              child: _isGeneratingProject
+                                  ? const Center(
+                                      child: SizedBox(width: 28, height: 28,
+                                        child: CircularProgressIndicator(
+                                          color: Colors.white, strokeWidth: 3)))
+                                  : Row(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        const Icon(Icons.rocket_launch, color: Colors.white, size: 26),
+                                        const SizedBox(width: 12),
+                                        Text(
+                                          'Start Capstone Project',
+                                          style: GoogleFonts.poppins(
+                                            fontSize: 18,
+                                            fontWeight: FontWeight.w900,
+                                            color: Colors.white,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Center(
+                            child: Text(
+                              'Build a real project to prove your skills!',
+                              style: GoogleFonts.poppins(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.black54,
+                              ),
+                            ),
+                          ),
+                        ],
                       ],
                     ),
                   ),
