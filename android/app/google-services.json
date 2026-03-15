@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "518852101234",
+    "project_id": "campuspp-9c6c7",
+    "storage_bucket": "campuspp-9c6c7.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:518852101234:android:726cbd948adfe55d206eeb",
+        "android_client_info": {
+          "package_name": "com.example.rakesh"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAz23YwULt6g1t8RRLyGJnnYKeqVxm5k18"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
