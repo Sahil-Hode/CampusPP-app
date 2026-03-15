@@ -31,6 +31,7 @@ import 'ar_viewer_page.dart';
 import 'predictive_dashboard_page.dart';
 import 'code_runner_page.dart';
 import 'gamification_page.dart';
+import 'faculty_notes_page.dart';
 
 
 import '../models/student_profile_model.dart';
@@ -632,6 +633,17 @@ class _DashboardPageState extends State<DashboardPage> {
                           iconBgColor: const Color(0xFFF59E0B),
                           textColor: Colors.black,
                           onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const GamificationPage())),
+                        ),
+
+                        _buildQuickActionButton(
+                          context,
+                          icon: Icons.school,
+                          label: 'Faculty Notes',
+                          subtitle: 'Guidance',
+                          color: const Color(0xFFE1BEE7),
+                          iconBgColor: const Color(0xFF9C27B0),
+                          textColor: Colors.black,
+                          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const FacultyNotesPage())),
                         ),
                       ],
                     ),

@@ -101,6 +101,10 @@ class NotificationHandler {
       case '/student/ai-council':
         routeName = '/ai-council';
         break;
+      case '/student/faculty-notes':
+      case '/faculty-notes':
+        routeName = '/faculty-notes';
+        break;
       case '/notifications':
         routeName = '/notifications';
         break;

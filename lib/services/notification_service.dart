@@ -145,6 +145,7 @@ class NotificationService {
   }
 
   // Send manual notification (For Testing/Admin)
+  // When type is 'faculty_annotation', also saves to the facultyannotations collection
   static Future<bool> sendManual({
     required String title,
     required String message,
@@ -163,10 +164,59 @@ class NotificationService {
           'severity': severity,
         }),
       );
+
+      // Also save to facultyannotations collection if it's a faculty note
+      if (type == 'faculty_annotation') {
+        _saveFacultyAnnotation(headers, title, message);
+      }
+
       return res.statusCode == 200;
     } catch (e) {
       print('Error sending manual notification: $e');
       return false;
+    }
+  }
+
+  // Save to facultyannotations collection (best-effort, non-blocking)
+  static Future<void> _saveFacultyAnnotation(
+    Map<String, String> headers,
+    String title,
+    String note,
+  ) async {
+    try {
+      final token = headers['Authorization']?.replaceFirst('Bearer ', '') ?? '';
+      final studentId = _extractStudentIdFromToken(token);
+      if (studentId.isEmpty) return;
+
+      await http.post(
+        Uri.parse('https://campuspp-f7qx.onrender.com/api/faculty-annotations'),
+        headers: headers,
+        body: jsonEncode({
+          'studentId': studentId,
+          'note': note,
+          'alertId': title,
+        }),
+      );
+    } catch (_) {
+      // Best-effort — don't block the main notification flow
+    }
+  }
+
+  // Extract studentId from JWT token
+  static String _extractStudentIdFromToken(String token) {
+    try {
+      final parts = token.split('.');
+      if (parts.length != 3) return '';
+      String payload = parts[1];
+      switch (payload.length % 4) {
+        case 2: payload += '=='; break;
+        case 3: payload += '='; break;
+      }
+      final decoded = utf8.decode(base64Url.decode(payload));
+      final data = jsonDecode(decoded);
+      return data['studentId'] ?? '';
+    } catch (_) {
+      return '';
     }
   }
 }

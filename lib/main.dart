@@ -16,6 +16,7 @@ import 'utils/notification_handler.dart';
 import 'providers/notification_provider.dart';
 import 'screens/notification_list_screen.dart';
 import 'pages/gamification_page.dart';
+import 'pages/faculty_notes_page.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
@@ -97,6 +98,7 @@ class MyApp extends StatelessWidget {
           // Re-map backend urls to existing ones if they exist, or fallback
           '/notifications': (context) => const NotificationListScreen(),
           '/gamification': (context) => const GamificationPage(),
+          '/faculty-notes': (context) => const FacultyNotesPage(),
           // Note: you will need to map these dynamically if the pages exist. 
           // For now they will fall back gracefully due to how routes work, 
           // but we define them here in case the user has the pages ready.

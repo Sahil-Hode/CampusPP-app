@@ -19,6 +19,7 @@ import 'resume_upload_page.dart';
 import 'resume_analysis_result_page.dart';
 import '../services/resume_service.dart';
 import '../widgets/scanning_animation.dart';
+import '../widgets/feedback_dialog.dart';
 
 class MockInterviewPage extends StatefulWidget {
   const MockInterviewPage({super.key});
@@ -548,6 +549,12 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
         });
         print(
           'DEBUG: Interview Ended successfully. Feedback received: ${_feedback?.feedback['score']}',
+        );
+        // Randomly show user feedback dialog after interview ends
+        maybeShowFeedbackDialog(
+          context,
+          feature: FeedbackFeature.mockInterview,
+          featureDisplayName: 'Mock Interview',
         );
       }
     } catch (e) {

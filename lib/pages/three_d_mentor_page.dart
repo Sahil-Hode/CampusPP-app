@@ -7,6 +7,7 @@ import 'dart:typed_data';
 import '../services/ai_service.dart';
 import 'package:socket_io_client/socket_io_client.dart' as IO;
 import '../services/student_service.dart';
+import '../widgets/feedback_dialog.dart';
 
 class ThreeDMentorPage extends StatefulWidget {
   const ThreeDMentorPage({super.key});
@@ -281,9 +282,15 @@ class _ThreeDMentorPageState extends State<ThreeDMentorPage> {
             top: 40,
             left: 20,
             child: GestureDetector(
-              onTap: () {
+              onTap: () async {
                  _audioPlayer.stop();
-                 Navigator.pop(context);
+                 // Randomly show user feedback dialog when leaving mentor
+                 await maybeShowFeedbackDialog(
+                   context,
+                   feature: FeedbackFeature.threeDMentor,
+                   featureDisplayName: '3D Mentor',
+                 );
+                 if (context.mounted) Navigator.pop(context);
               },
               child: Container(
                 padding: const EdgeInsets.all(10),
