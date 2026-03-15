@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:flutter_unity_widget_2/flutter_unity_widget_2.dart';
+
 import 'package:speech_to_text/speech_to_text.dart' as stt;
 import '../services/student_service.dart';
 import '../services/vr_interview_service.dart';
@@ -17,7 +17,7 @@ class VRInterviewPage extends StatefulWidget {
 }
 
 class _VRInterviewPageState extends State<VRInterviewPage> {
-  UnityWidgetController? _unityWidgetController;
+
   late stt.SpeechToText _speech;
   late VRMockInterviewService _interviewService;
 
@@ -152,18 +152,9 @@ class _VRInterviewPageState extends State<VRInterviewPage> {
 
   @override
   void dispose() {
-    _unityWidgetController?.dispose();
     _speech.stop();
     _interviewService.dispose();
     super.dispose();
-  }
-
-  void _onUnityCreated(controller) {
-    _unityWidgetController = controller;
-  }
-
-  void onUnityMessage(message) {
-    print('Received message from unity: ${message.toString()}');
   }
 
   @override
@@ -172,12 +163,7 @@ class _VRInterviewPageState extends State<VRInterviewPage> {
       backgroundColor: Colors.black,
       body: Stack(
         children: [
-          UnityWidget(
-            onUnityCreated: _onUnityCreated,
-            onUnityMessage: onUnityMessage,
-            useAndroidViewSurface: false,
-            borderRadius: const BorderRadius.all(Radius.circular(0)),
-          ),
+
           Positioned(
             top: 40,
             left: 10,

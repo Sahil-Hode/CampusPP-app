@@ -24,6 +24,4 @@ plugins {
 }
 
 include(":app")
-include(":unityLibrary")
-val unityLibraryProject = project(":unityLibrary")
-unityLibraryProject.projectDir = File(settingsDir, "./unityLibrary")
+
