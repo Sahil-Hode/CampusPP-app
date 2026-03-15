@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'dart:io';
 
 import 'pages/login_page.dart';
@@ -14,6 +15,7 @@ import 'services/local_notification_service.dart';
 import 'utils/notification_handler.dart';
 import 'providers/notification_provider.dart';
 import 'screens/notification_list_screen.dart';
+import 'pages/gamification_page.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
@@ -27,13 +29,21 @@ void main() async {
      await NotificationHandler.initialize();
 
      final messaging = FirebaseMessaging.instance;
-     // Request permission for iOS
+     // Request permission (required for iOS + Android 13+)
      await messaging.requestPermission(
        alert: true,
        badge: true,
        sound: true,
        criticalAlert: true,
      );
+
+     // Request Android local notification permission explicitly for Android 13+
+     if (Platform.isAndroid) {
+       final flnPlugin = FlutterLocalNotificationsPlugin();
+       final androidPlugin = flnPlugin.resolvePlatformSpecificImplementation<
+           AndroidFlutterLocalNotificationsPlugin>();
+       await androidPlugin?.requestNotificationsPermission();
+     }
      
      // Get FCM token
      final fcmToken = await messaging.getToken();
@@ -86,6 +96,7 @@ class MyApp extends StatelessWidget {
           '/dashboard': (context) => const DashboardPage(),
           // Re-map backend urls to existing ones if they exist, or fallback
           '/notifications': (context) => const NotificationListScreen(),
+          '/gamification': (context) => const GamificationPage(),
           // Note: you will need to map these dynamically if the pages exist. 
           // For now they will fall back gracefully due to how routes work, 
           // but we define them here in case the user has the pages ready.

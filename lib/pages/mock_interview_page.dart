@@ -1232,7 +1232,7 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
                     ),
                     const SizedBox(height: 14),
                     Text(
-                      'RESUME ANALYZER',
+                      'MOCK INTERVIEW',
                       style: GoogleFonts.poppins(
                         fontSize: 24,
                         fontWeight: FontWeight.w900,
@@ -1241,7 +1241,7 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'Pick a resume source to analyze your score.',
+                      'AI-powered interview practice with real-time feedback.',
                       style: GoogleFonts.poppins(
                         fontSize: 13,
                         color: Colors.grey[700],
@@ -1366,6 +1366,50 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
                     ),
 
                     const SizedBox(height: 14),
+
+                    // Start Interview Button
+                    ElevatedButton.icon(
+                      onPressed: ((_resumeSource == 'profile' && _hasResume) ||
+                              (_resumeSource == 'upload' && _resumePath != null))
+                          ? _startInterview
+                          : null,
+                      icon: const Icon(Icons.mic),
+                      label: const Text('START MOCK INTERVIEW'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor:
+                            ((_resumeSource == 'profile' && _hasResume) ||
+                                    (_resumeSource == 'upload' &&
+                                        _resumePath != null))
+                                ? const Color(0xFFA8E6CF)
+                                : Colors.grey[300],
+                        foregroundColor: Colors.black,
+                        minimumSize: const Size(double.infinity, 56),
+                        side: const BorderSide(color: Colors.black, width: 3),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        elevation: 0,
+                      ),
+                    ),
+
+                    const SizedBox(height: 10),
+
+                    Row(
+                      children: [
+                        const Expanded(child: Divider(color: Colors.black26)),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 12),
+                          child: Text('OR',
+                              style: GoogleFonts.poppins(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w800,
+                                  color: Colors.black45)),
+                        ),
+                        const Expanded(child: Divider(color: Colors.black26)),
+                      ],
+                    ),
+
+                    const SizedBox(height: 10),
 
                     if (_isAnalyzingResume)
                       const Padding(

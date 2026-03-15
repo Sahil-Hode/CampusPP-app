@@ -1,9 +1,13 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:printing/printing.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../models/student_profile_model.dart';
 import '../services/student_service.dart';
 import '../services/auth_service.dart';
+import '../services/career_report_service.dart';
+import '../services/career_report_pdf_generator.dart';
 import 'login_page.dart';
 
 class ProfilePage extends StatefulWidget {
@@ -17,11 +21,12 @@ class _ProfilePageState extends State<ProfilePage> {
   late TextEditingController _nameController;
   late TextEditingController _languageController;
   late TextEditingController _classesController;
-  
+
   StudentProfile? _profile;
   bool _isLoading = true;
   bool _isUploadingPhoto = false;
   bool _isUploadingResume = false;
+  bool _isDownloadingReport = false;
   String? _avatarOverride;
   String? _resumeFileName;
 
@@ -200,6 +205,33 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
+  Future<void> _downloadCareerReport() async {
+    if (_isDownloadingReport) return;
+
+    setState(() => _isDownloadingReport = true);
+    try {
+      final data = await CareerReportService.getCareerReportSummary();
+      final pdfBytes = await CareerReportPdfGenerator.generate(data);
+
+      if (!mounted) return;
+
+      await Printing.layoutPdf(
+        onLayout: (_) async => pdfBytes,
+        name: 'Campus++_Career_Report',
+      );
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error generating report: $e')),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isDownloadingReport = false);
+      }
+    }
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -269,6 +301,55 @@ class _ProfilePageState extends State<ProfilePage> {
                           ),
                         ),
                       ],
+                      const SizedBox(height: 10),
+                      // Career Report Download Button
+                      GestureDetector(
+                        onTap: _isDownloadingReport ? null : _downloadCareerReport,
+                        child: Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFFFF9C4),
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(color: Colors.black, width: 2),
+                            boxShadow: const [
+                              BoxShadow(
+                                color: Colors.black,
+                                offset: Offset(4, 4),
+                                blurRadius: 0,
+                              ),
+                            ],
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              if (_isDownloadingReport)
+                                const SizedBox(
+                                  height: 20,
+                                  width: 20,
+                                  child: CircularProgressIndicator(
+                                    color: Colors.black,
+                                    strokeWidth: 2.5,
+                                  ),
+                                )
+                              else
+                                const Icon(Icons.download_rounded,
+                                    color: Colors.black, size: 22),
+                              const SizedBox(width: 10),
+                              Text(
+                                _isDownloadingReport
+                                    ? 'Generating Report...'
+                                    : 'Download Career Report',
+                                style: GoogleFonts.poppins(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w700,
+                                  color: Colors.black,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
                       Text(
                         _profile?.studentId ?? '',
                         style: const TextStyle(

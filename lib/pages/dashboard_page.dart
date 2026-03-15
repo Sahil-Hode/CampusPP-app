@@ -27,9 +27,10 @@ import '../widgets/quiz_overview_card.dart';
 import '../services/quiz_service.dart';
 import '../models/quiz_model.dart';
 import 'ar_viewer_page.dart';
-import 'vr_interview_page.dart';
+
 import 'predictive_dashboard_page.dart';
 import 'code_runner_page.dart';
+import 'gamification_page.dart';
 
 
 import '../models/student_profile_model.dart';
@@ -591,166 +592,13 @@ class _DashboardPageState extends State<DashboardPage> {
                         _buildQuickActionButton(
                           context,
                           icon: Icons.camera_alt_outlined,
-                          label: 'AR/VR Models',
+                          label: 'AR Models',
                           subtitle: 'Immersive',
                           color: const Color(0xFFE8EAF6),
                           iconBgColor: const Color(0xFF7986CB),
                           textColor: Colors.black,
                           onTap: () {
-                            showModalBottomSheet(
-                              context: context,
-                              backgroundColor: Colors.transparent, // Match brutalist theme
-                              isScrollControlled: true,
-                              builder: (context) => Container(
-                                margin: const EdgeInsets.all(16),
-                                padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 20),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFFFF9C4), // Retro yellow background
-                                  borderRadius: BorderRadius.circular(16),
-                                  border: Border.all(color: Colors.black, width: 3),
-                                  boxShadow: const [
-                                    BoxShadow(
-                                      color: Colors.black,
-                                      offset: Offset(6, 6),
-                                      blurRadius: 0,
-                                    ),
-                                  ],
-                                ),
-                                child: Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                                  children: [
-                                    Center(
-                                      child: Text(
-                                        'CHOOSE EXPERIENCE',
-                                        style: GoogleFonts.poppins(
-                                          fontSize: 22,
-                                          fontWeight: FontWeight.w900,
-                                          color: Colors.black,
-                                          letterSpacing: -0.5,
-                                        ),
-                                      ),
-                                    ),
-                                    const SizedBox(height: 24),
-                                    // AR Models Brutalist Card
-                                    GestureDetector(
-                                      onTap: () {
-                                        Navigator.pop(context);
-                                        Navigator.push(context, MaterialPageRoute(builder: (context) => const ARViewerPage()));
-                                      },
-                                      child: Container(
-                                        padding: const EdgeInsets.all(16),
-                                        decoration: BoxDecoration(
-                                          color: const Color(0xFFE8EAF6),
-                                          borderRadius: BorderRadius.circular(12),
-                                          border: Border.all(color: Colors.black, width: 2.5),
-                                          boxShadow: const [
-                                            BoxShadow(
-                                              color: Colors.black,
-                                              offset: Offset(4, 4),
-                                              blurRadius: 0,
-                                            ),
-                                          ],
-                                        ),
-                                        child: Row(
-                                          children: [
-                                            Container(
-                                              padding: const EdgeInsets.all(12),
-                                              decoration: BoxDecoration(
-                                                color: const Color(0xFF7986CB),
-                                                shape: BoxShape.circle,
-                                                border: Border.all(color: Colors.black, width: 2),
-                                              ),
-                                              child: const Icon(Icons.camera_alt_outlined, color: Colors.white, size: 28),
-                                            ),
-                                            const SizedBox(width: 16),
-                                            Expanded(
-                                              child: Column(
-                                                crossAxisAlignment: CrossAxisAlignment.start,
-                                                children: [
-                                                  Text('AR Models', style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.w900, color: Colors.black)),
-                                                  Text('Explore in your space', style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.black87)),
-                                                ],
-                                              ),
-                                            ),
-                                            const Icon(Icons.arrow_forward, color: Colors.black),
-                                          ],
-                                        ),
-                                      ),
-                                    ),
-                                    const SizedBox(height: 16),
-                                    // VR Interview Brutalist Card
-                                    GestureDetector(
-                                      onTap: () {
-                                        Navigator.pop(context);
-                                        Navigator.push(context, MaterialPageRoute(builder: (context) => const VRInterviewPage()));
-                                      },
-                                      child: Container(
-                                        padding: const EdgeInsets.all(16),
-                                        decoration: BoxDecoration(
-                                          color: const Color(0xFFF3E5F5),
-                                          borderRadius: BorderRadius.circular(12),
-                                          border: Border.all(color: Colors.black, width: 2.5),
-                                          boxShadow: const [
-                                            BoxShadow(
-                                              color: Colors.black,
-                                              offset: Offset(4, 4),
-                                              blurRadius: 0,
-                                            ),
-                                          ],
-                                        ),
-                                        child: Row(
-                                          children: [
-                                            Container(
-                                              padding: const EdgeInsets.all(12),
-                                              decoration: BoxDecoration(
-                                                color: const Color(0xFF9C27B0),
-                                                shape: BoxShape.circle,
-                                                border: Border.all(color: Colors.black, width: 2),
-                                              ),
-                                              child: const Icon(Icons.headset_mic_outlined, color: Colors.white, size: 28),
-                                            ),
-                                            const SizedBox(width: 16),
-                                            Expanded(
-                                              child: Column(
-                                                crossAxisAlignment: CrossAxisAlignment.start,
-                                                children: [
-                                                  Text('VR Interview', style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.w900, color: Colors.black)),
-                                                  Text('Immersive AI Mock Session', style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.black87)),
-                                                ],
-                                              ),
-                                            ),
-                                            const Icon(Icons.arrow_forward, color: Colors.black),
-                                          ],
-                                        ),
-                                      ),
-                                    ),
-                                    const SizedBox(height: 24),
-                                    // Cancel button
-                                    GestureDetector(
-                                      onTap: () => Navigator.pop(context),
-                                      child: Container(
-                                        padding: const EdgeInsets.symmetric(vertical: 14),
-                                        decoration: BoxDecoration(
-                                          color: Colors.white,
-                                          borderRadius: BorderRadius.circular(100),
-                                          border: Border.all(color: Colors.black, width: 2),
-                                          boxShadow: const [
-                                            BoxShadow(
-                                              color: Colors.black,
-                                              offset: Offset(3, 3),
-                                            ),
-                                          ],
-                                        ),
-                                        child: Center(
-                                          child: Text('CANCEL', style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w900, color: Colors.black)),
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            );
+                            Navigator.push(context, MaterialPageRoute(builder: (context) => const ARViewerPage()));
                           },
                         ),
                         _buildQuickActionButton(
@@ -773,6 +621,17 @@ class _DashboardPageState extends State<DashboardPage> {
                           iconBgColor: const Color(0xFF5C6BC0),
                           textColor: Colors.black,
                           onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const CodeRunnerPage())),
+                        ),
+
+                        _buildQuickActionButton(
+                          context,
+                          icon: Icons.emoji_events,
+                          label: 'Rewards',
+                          subtitle: 'XP & Badges',
+                          color: const Color(0xFFFFF9C4),
+                          iconBgColor: const Color(0xFFF59E0B),
+                          textColor: Colors.black,
+                          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const GamificationPage())),
                         ),
                       ],
                     ),
