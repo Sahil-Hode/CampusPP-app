@@ -1,6 +1,8 @@
 ﻿import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
+import '../providers/notification_provider.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../models/student_model.dart'; // Keep for other sample data if needed
 import '../models/performance_model.dart';
@@ -49,6 +51,9 @@ class _DashboardPageState extends State<DashboardPage> {
   void initState() {
     super.initState();
     _fetchDashboardData();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<NotificationProvider>().fetchUnreadCount();
+    });
   }
 
   ImageProvider _buildAvatarImage() {
@@ -318,25 +323,57 @@ class _DashboardPageState extends State<DashboardPage> {
                     onTap: () {
                       Navigator.pushNamed(context, '/notifications');
                     },
-                    child: Container(
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        shape: BoxShape.circle,
-                        border: Border.all(color: Colors.black, width: 2),
-                        boxShadow: const [
-                          BoxShadow(
-                            color: Colors.black,
-                            offset: Offset(2, 2),
-                            blurRadius: 0,
-                          ),
-                        ],
-                      ),
-                      child: const Icon(
-                        Icons.notifications_outlined,
-                        color: Colors.black,
-                        size: 22,
-                      ),
+                    child: Consumer<NotificationProvider>(
+                      builder: (context, notifProvider, _) {
+                        return Stack(
+                          clipBehavior: Clip.none,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(10),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                shape: BoxShape.circle,
+                                border: Border.all(color: Colors.black, width: 2),
+                                boxShadow: const [
+                                  BoxShadow(
+                                    color: Colors.black,
+                                    offset: Offset(2, 2),
+                                    blurRadius: 0,
+                                  ),
+                                ],
+                              ),
+                              child: const Icon(
+                                Icons.notifications_outlined,
+                                color: Colors.black,
+                                size: 22,
+                              ),
+                            ),
+                            if (notifProvider.unreadCount > 0)
+                              Positioned(
+                                right: -4,
+                                top: -4,
+                                child: Container(
+                                  padding: const EdgeInsets.all(4),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFFF8B94),
+                                    shape: BoxShape.circle,
+                                    border: Border.all(color: Colors.black, width: 1.5),
+                                  ),
+                                  child: Text(
+                                    notifProvider.unreadCount > 9
+                                        ? '9+'
+                                        : '${notifProvider.unreadCount}',
+                                    style: GoogleFonts.poppins(
+                                      fontSize: 8,
+                                      fontWeight: FontWeight.w900,
+                                      color: Colors.black,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                          ],
+                        );
+                      },
                     ),
                   ),
                   const SizedBox(width: 8),
