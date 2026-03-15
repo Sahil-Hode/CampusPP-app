@@ -50,12 +50,15 @@ app.*.map.json
 node_modules/
 
 # Ignore heavy Unity exported artifacts
-android/unityLibrary/build/
-android/unityLibrary/.utmp/
-android/unityLibrary/symbols/
+android/unityLibrary/
 android/shared/
 android/app/src/main/assets/bin/Data/resources.assets
 *.so
 *.a
 *.jar
 *.so.debug
+
+# Android build artifacts
+android/build/
+android/.gradle/
+*.hprof

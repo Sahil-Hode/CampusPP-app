@@ -90,7 +90,6 @@ class MyApp extends StatelessWidget {
           // For now they will fall back gracefully due to how routes work, 
           // but we define them here in case the user has the pages ready.
       },
-      home: isLoggedIn ? const DashboardPage() : const LandingPage(), // Fallback
     );
   }
 }

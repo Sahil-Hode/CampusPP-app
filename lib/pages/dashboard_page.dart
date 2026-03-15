@@ -313,6 +313,33 @@ class _DashboardPageState extends State<DashboardPage> {
                     ),
                   ),
                   const SizedBox(width: 8),
+                  // Notification Bell Button
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.pushNamed(context, '/notifications');
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.black, width: 2),
+                        boxShadow: const [
+                          BoxShadow(
+                            color: Colors.black,
+                            offset: Offset(2, 2),
+                            blurRadius: 0,
+                          ),
+                        ],
+                      ),
+                      child: const Icon(
+                        Icons.notifications_outlined,
+                        color: Colors.black,
+                        size: 22,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
                   // Chatbot Button (Moved here)
                   GestureDetector(
                     onTap: () {
