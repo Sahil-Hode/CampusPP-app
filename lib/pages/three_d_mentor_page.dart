@@ -5,8 +5,8 @@ import 'package:audioplayers/audioplayers.dart';
 import 'dart:convert' as convert;
 import 'dart:typed_data';
 import '../services/ai_service.dart';
-import 'package:socket_io_client/socket_io_client.dart' as IO;
 import '../services/student_service.dart';
+import 'package:socket_io_client/socket_io_client.dart' as IO;
 import '../widgets/feedback_dialog.dart';
 
 class ThreeDMentorPage extends StatefulWidget {
@@ -23,8 +23,8 @@ class _ThreeDMentorPageState extends State<ThreeDMentorPage> {
   late IO.Socket _socket;
 
   // State variables
-  String? _studentContext; // Store fetched student data
-  
+  String _studentContext = '';
+
   bool _isSpeaking = false; // Audio playing (lip sync)
   bool _isListening = false; // STT listening
   bool _isProcessing = false; // Backend processing
@@ -58,6 +58,65 @@ class _ThreeDMentorPageState extends State<ThreeDMentorPage> {
     _initAudioPlayer();
     _fetchStudentContext();
     _initSocket();
+  }
+
+  Future<void> _fetchStudentContext() async {
+    try {
+      final data = await StudentService.fetchFullStudentData();
+      final profile = data['profile'] ?? {};
+      final perf = data['performance'] ?? {};
+      final currentPerf = perf['currentPerformance'] ?? {};
+      final pi = perf['predictiveIntelligence'] ?? {};
+      final stability = pi['academicStability'] ?? {};
+      final trend = pi['trendAnalysis'] ?? {};
+      final riskBd = pi['riskBreakdown'] ?? {};
+      final alert = pi['smartAlert'] ?? {};
+      final intervention = perf['intervention'] ?? {};
+
+      final buf = StringBuffer();
+      buf.writeln('[STUDENT PROFILE — use ONLY when asked]');
+      buf.writeln('Name: ${profile['name'] ?? 'N/A'}');
+      buf.writeln('Student ID: ${profile['studentId'] ?? 'N/A'}');
+      buf.writeln('Email: ${profile['email'] ?? 'N/A'}');
+      buf.writeln('Class: ${profile['classes'] ?? 'N/A'} | Course: ${profile['Course'] ?? 'N/A'}');
+      buf.writeln('Institute: ${profile['instituteName'] ?? 'N/A'}');
+      buf.writeln('Marks: ${profile['marks'] ?? 'N/A'} | Attendance: ${profile['attendance'] ?? 'N/A'}');
+
+      buf.writeln('');
+      buf.writeln('[PERFORMANCE — use ONLY when asked about scores/performance/risk]');
+      buf.writeln('Overall Score: ${perf['score'] ?? 'N/A'}/100 | Risk: ${perf['riskLevel'] ?? 'N/A'} | Trend: ${perf['trend'] ?? 'N/A'}');
+      buf.writeln('Attendance: ${currentPerf['attendance'] ?? 'N/A'}% | Internal Marks: ${currentPerf['internalMarks'] ?? 'N/A'}%');
+
+      final strengths = perf['strengths'];
+      if (strengths is List && strengths.isNotEmpty) {
+        buf.writeln('Strengths: ${strengths.join(', ')}');
+      }
+      final concerns = perf['concerns'];
+      if (concerns is List && concerns.isNotEmpty) {
+        buf.writeln('Concerns: ${concerns.join(', ')}');
+      }
+      final recs = perf['recommendations'];
+      if (recs is List && recs.isNotEmpty) {
+        buf.writeln('Recommendations: ${recs.take(3).join('; ')}');
+      }
+
+      if (stability.isNotEmpty) {
+        buf.writeln('Stability: ${stability['stabilityScore'] ?? 'N/A'}/100 | Failure Risk: ${stability['finalRisk'] ?? 'N/A'}%');
+      }
+      if (riskBd.isNotEmpty) {
+        buf.writeln('Primary Weakness: ${riskBd['primaryWeakness'] ?? 'N/A'}');
+      }
+      if (alert.isNotEmpty) {
+        buf.writeln('Alert: ${alert['level'] ?? 'N/A'} — ${alert['message'] ?? 'None'}');
+      }
+      if (intervention['required'] == true) {
+        buf.writeln('Intervention: ${intervention['priority'] ?? 'N/A'} priority');
+      }
+
+      if (mounted) setState(() => _studentContext = buf.toString());
+    } catch (e) {
+      print("Error fetching student context: $e");
+    }
   }
 
   void _initSocket() {
@@ -108,30 +167,6 @@ class _ThreeDMentorPageState extends State<ThreeDMentorPage> {
     });
   }
 
-  Future<void> _fetchStudentContext() async {
-    try {
-      final data = await StudentService.fetchFullStudentData();
-      // Format data for AI
-      final profile = data['profile'] ?? {};
-      final perf = data['performance'] ?? {};
-      final currentPerf = perf['currentPerformance'] ?? {};
-      
-      String context = """
-      Name: ${profile['name']}
-      Course: ${profile['Course']}
-      Attendance: ${currentPerf['attendance']}%
-      Marks: ${currentPerf['currentPerformance']?['internalMarks'] ?? 'N/A'}
-      Risk Level: ${currentPerf['riskLevel']}
-      Strengths: ${currentPerf['strengths']?.join(', ') ?? 'N/A'}
-      Concerns: ${currentPerf['concerns']?.join(', ') ?? 'N/A'}
-      """;
-      
-      setState(() => _studentContext = context);
-      print("Student Context Loaded: $_studentContext");
-    } catch (e) {
-      print("Error fetching student context: $e");
-    }
-  }
 
 
   void _initAudioPlayer() {
@@ -221,12 +256,13 @@ class _ThreeDMentorPageState extends State<ThreeDMentorPage> {
     final String backendLang =
         _backendLangKey[_selectedLangDisplayKey] ?? 'english';
 
-    // Base system prompt — backend will append language-specific instructions
-    // (see buildPromptWithProfile in the backend controller)
-    const String systemPrompt =
+    // Base system prompt with student context baked in (no DB query per message)
+    final String systemPrompt =
         'You are a helpful and knowledgeable teacher named Deepak. '
         'You are mentoring a student. Keep answers under 3 sentences. '
-        'Use provided student data only when the user asks something personal.';
+        'Do NOT volunteer extra information. Only answer exactly what the student asks. '
+        'Share student details only when the student asks something personal or about their performance.'
+        '${_studentContext.isNotEmpty ? '\n\n$_studentContext' : ''}';
 
     _socket.emit('textMessage', {
       'message': input,

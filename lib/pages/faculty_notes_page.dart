@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../services/notification_service.dart';
 import '../services/student_service.dart';
-import '../models/notification_model.dart';
+import '../models/faculty_annotation_model.dart';
 import '../models/performance_model.dart';
 
 class FacultyNotesPage extends StatefulWidget {
@@ -15,7 +14,7 @@ class FacultyNotesPage extends StatefulWidget {
 class _FacultyNotesPageState extends State<FacultyNotesPage>
     with SingleTickerProviderStateMixin {
   bool _loading = true;
-  List<NotificationModel> _facultyNotes = [];
+  List<FacultyAnnotation> _facultyNotes = [];
   InterventionData? _intervention;
   late TabController _tabCtrl;
 
@@ -47,10 +46,7 @@ class _FacultyNotesPageState extends State<FacultyNotesPage>
 
   Future<void> _loadFacultyNotes() async {
     try {
-      final res = await NotificationService.getNotifications(page: 1, limit: 50);
-      final notes = res.data
-          .where((n) => n.type == 'faculty_annotation')
-          .toList();
+      final notes = await StudentService.getFacultyNotes();
       if (mounted) setState(() => _facultyNotes = notes);
     } catch (_) {}
   }
@@ -69,17 +65,6 @@ class _FacultyNotesPageState extends State<FacultyNotesPage>
     if (diff.inHours > 0) return '${diff.inHours}h ago';
     if (diff.inMinutes > 0) return '${diff.inMinutes}m ago';
     return 'Just now';
-  }
-
-  Color _severityColor(String severity) {
-    switch (severity.toLowerCase()) {
-      case 'critical':
-        return _red;
-      case 'warning':
-        return _yellow;
-      default:
-        return _purple;
-    }
   }
 
   @override
@@ -278,8 +263,8 @@ class _FacultyNotesPageState extends State<FacultyNotesPage>
     );
   }
 
-  Widget _buildNoteCard(NotificationModel note) {
-    final color = _severityColor(note.severity);
+  Widget _buildNoteCard(FacultyAnnotation note) {
+    final color = _purple;
     return Container(
       margin: const EdgeInsets.only(bottom: 14),
       decoration: BoxDecoration(
@@ -314,28 +299,25 @@ class _FacultyNotesPageState extends State<FacultyNotesPage>
                 ),
                 const SizedBox(width: 10),
                 Expanded(
-                  child: Text(
-                    note.title,
-                    style: GoogleFonts.poppins(
-                      fontWeight: FontWeight.w800,
-                      fontSize: 14,
-                    ),
-                  ),
-                ),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                  decoration: BoxDecoration(
-                    color: Colors.black,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    note.severity.toUpperCase(),
-                    style: GoogleFonts.poppins(
-                      fontSize: 9,
-                      fontWeight: FontWeight.w900,
-                      color: Colors.white,
-                    ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        note.facultyName,
+                        style: GoogleFonts.poppins(
+                          fontWeight: FontWeight.w800,
+                          fontSize: 14,
+                        ),
+                      ),
+                      Text(
+                        note.alertId,
+                        style: GoogleFonts.poppins(
+                          fontWeight: FontWeight.w500,
+                          fontSize: 10,
+                          color: Colors.black54,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],
@@ -345,7 +327,7 @@ class _FacultyNotesPageState extends State<FacultyNotesPage>
           Padding(
             padding: const EdgeInsets.all(16),
             child: Text(
-              note.message,
+              note.note,
               style: GoogleFonts.poppins(
                 fontSize: 13,
                 fontWeight: FontWeight.w500,
@@ -369,24 +351,6 @@ class _FacultyNotesPageState extends State<FacultyNotesPage>
                     color: Colors.black45,
                   ),
                 ),
-                const Spacer(),
-                if (!note.isRead)
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                    decoration: BoxDecoration(
-                      color: _red,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: _black, width: 1.5),
-                    ),
-                    child: Text(
-                      'NEW',
-                      style: GoogleFonts.poppins(
-                        fontSize: 9,
-                        fontWeight: FontWeight.w900,
-                      ),
-                    ),
-                  ),
               ],
             ),
           ),

@@ -12,7 +12,6 @@ import 'ai_analysis_page.dart';
 import 'resume_upload_page.dart';
 import 'profile_page.dart';
 import 'ai_council_page.dart';
-import 'chatbot_page.dart';
 import '../widgets/attendance_card.dart';
 import '../widgets/lms_engagement_card.dart';
 import 'score_breakdown_page.dart';
@@ -384,7 +383,7 @@ class _DashboardPageState extends State<DashboardPage> {
                     onTap: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (context) => const ChatbotPage()),
+                        MaterialPageRoute(builder: (context) => const ThreeDMentorPage()),
                       );
                     },
                     child: Container(
@@ -1092,7 +1091,7 @@ class _DashboardPageState extends State<DashboardPage> {
 
 
 
-  Widget _buildNavItem(BuildContext context, IconData icon, String label, bool isActive, {bool isProgress = false, bool isPath = false, bool isChat = false, bool is3DMentor = false}) {
+  Widget _buildNavItem(BuildContext context, IconData icon, String label, bool isActive, {bool isProgress = false, bool isPath = false, bool is3DMentor = false}) {
     final screenWidth = MediaQuery.of(context).size.width;
     final iconSize = (screenWidth * 0.055).clamp(18.0, 30.0);
     final iconPadding = (screenWidth * 0.025).clamp(6.0, 14.0);
@@ -1111,12 +1110,6 @@ class _DashboardPageState extends State<DashboardPage> {
           Navigator.of(context).push(
             MaterialPageRoute(
               builder: (context) => const LearningPathPage(), // Navigate to Learning Path
-            ),
-          );
-        } else if (isChat) {
-          Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (context) => const ChatbotPage(),
             ),
           );
         } else if (is3DMentor) {
