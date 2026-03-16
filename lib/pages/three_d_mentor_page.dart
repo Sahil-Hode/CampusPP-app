@@ -133,8 +133,7 @@ class _ThreeDMentorPageState extends State<ThreeDMentorPage> {
       if (mounted) {
         setState(() {
           _isProcessing = false;
-          // Only update the text if it's the AI response
-          _text = data['response'] ?? "I couldn't process that.";
+          _text = _cleanMarkdown(data['response'] ?? "I couldn't process that.");
         });
       }
     });
@@ -185,6 +184,23 @@ class _ThreeDMentorPageState extends State<ThreeDMentorPage> {
 
   void _initSpeech() async {
     _speech = stt.SpeechToText();
+  }
+
+  String _cleanMarkdown(String text) {
+    return text
+        .replaceAll(RegExp(r'\*\*(.+?)\*\*'), r'$1')
+        .replaceAll(RegExp(r'\*(.+?)\*'), r'$1')
+        .replaceAll(RegExp(r'__(.+?)__'), r'$1')
+        .replaceAll(RegExp(r'_(.+?)_'), r'$1')
+        .replaceAll(RegExp(r'~~(.+?)~~'), r'$1')
+        .replaceAll(RegExp(r'`(.+?)`'), r'$1')
+        .replaceAll(RegExp(r'^#+\s*', multiLine: true), '')
+        .replaceAll(RegExp(r'^\s*[-*]\s+', multiLine: true), '')
+        .replaceAll(RegExp(r'^\s*\d+\.\s+', multiLine: true), '')
+        .replaceAll('\\n', '\n')
+        .replaceAll('\\\\', '')
+        .replaceAll(RegExp(r'\n{3,}'), '\n\n')
+        .trim();
   }
 
   void _listen() async {
@@ -256,12 +272,16 @@ class _ThreeDMentorPageState extends State<ThreeDMentorPage> {
     final String backendLang =
         _backendLangKey[_selectedLangDisplayKey] ?? 'english';
 
-    // Base system prompt with student context baked in (no DB query per message)
+    // Base system prompt — conversational, human, short
     final String systemPrompt =
-        'You are a helpful and knowledgeable teacher named Deepak. '
-        'You are mentoring a student. Keep answers under 3 sentences. '
-        'Do NOT volunteer extra information. Only answer exactly what the student asks. '
-        'Share student details only when the student asks something personal or about their performance.'
+        'You are Deepak, a friendly teacher talking to a student. '
+        'Talk like a real human — warm, casual, natural. Not robotic. '
+        'Keep it super short: 1-2 sentences MAX. No bullet points, no lists, no headings. '
+        'Just talk naturally like you would face to face. '
+        'Do NOT use markdown formatting (no **, no ##, no bullets). Plain text only. '
+        'Never dump all info at once. Answer only what they asked, nothing extra. '
+        'If they greet you, just greet back briefly. '
+        'You know their details but only mention them if they ask or if it is directly relevant.'
         '${_studentContext.isNotEmpty ? '\n\n$_studentContext' : ''}';
 
     _socket.emit('textMessage', {

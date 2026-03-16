@@ -277,7 +277,7 @@ class _DashboardPageState extends State<DashboardPage> {
                     ),
                   ),
                   const SizedBox(width: 6),
-                  // Keep header on one line: compact risk + chatbot
+                  // Keep header on one line: compact risk + notification
                   GestureDetector(
                     onTap: () {
                       _showRiskPopup();
@@ -375,36 +375,6 @@ class _DashboardPageState extends State<DashboardPage> {
                           ],
                         );
                       },
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  // Chatbot Button (Moved here)
-                  GestureDetector(
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => const ThreeDMentorPage()),
-                      );
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        shape: BoxShape.circle,
-                        border: Border.all(color: Colors.black, width: 2),
-                        boxShadow: const [
-                          BoxShadow(
-                            color: Colors.black,
-                            offset: Offset(2, 2),
-                            blurRadius: 0,
-                          ),
-                        ],
-                      ),
-                      child: const Icon(
-                        Icons.smart_toy, // Unique AI/Chatbot icon
-                        color: Colors.black,
-                        size: 22,
-                      ),
                     ),
                   ),
                 ],
