@@ -548,6 +548,15 @@ class _DashboardPageState extends State<DashboardPage> {
 
                     const SizedBox(height: 16),
 
+                    // --- Subject Marks Card ---
+                    if (_overviewData != null && _overviewData!.subjectMarks.isNotEmpty)
+                      SubjectMarksCard(
+                        subjectMarks: _overviewData!.subjectMarks,
+                        averageMarks: _overviewData!.internalMarks,
+                      ),
+
+                    const SizedBox(height: 16),
+
                     // --- AI Council Directive Card (Neobrutalist Verdict Style) ---
                     if (_councilData != null)
                       _buildCouncilCard()

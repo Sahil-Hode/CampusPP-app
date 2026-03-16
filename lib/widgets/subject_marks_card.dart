@@ -1,81 +1,99 @@
 import 'package:flutter/material.dart';
-import '../models/student_model.dart';
-import '../models/performance_model.dart';
+import 'package:google_fonts/google_fonts.dart';
 
-class OverviewCard extends StatelessWidget {
-  final OverviewData overview;
+class SubjectMarksCard extends StatelessWidget {
+  final Map<String, double> subjectMarks;
+  final int averageMarks;
 
-  const OverviewCard({
+  const SubjectMarksCard({
     super.key,
-    required this.overview,
+    required this.subjectMarks,
+    required this.averageMarks,
   });
+
+  Color _barColor(double marks) {
+    if (marks >= 75) return const Color(0xFF40FFA7);
+    if (marks >= 60) return const Color(0xFFFFD54F);
+    return const Color(0xFFFF8B94);
+  }
 
   @override
   Widget build(BuildContext context) {
+    if (subjectMarks.isEmpty) return const SizedBox.shrink();
+
+    final sorted = subjectMarks.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
+
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: Colors.black, width: 3),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: Colors.black, width: 2),
         boxShadow: const [
-          BoxShadow(
-            color: Colors.black,
-            offset: Offset(6, 6),
-            blurRadius: 0,
-          ),
+          BoxShadow(color: Colors.black, offset: Offset(4, 4), blurRadius: 0),
         ],
       ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 1. Overview Header Section
+          // Header
           Container(
-            padding: const EdgeInsets.all(20),
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             decoration: const BoxDecoration(
-              color: Color(0xFFFFF9C4), // Light Yellow Header
-              borderRadius: BorderRadius.only(
-                topLeft: Radius.circular(21),
-                topRight: Radius.circular(21),
-              ),
-              border: Border(bottom: BorderSide(color: Colors.black, width: 3)),
+              color: Color(0xFFE8EAF6),
+              borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+              border: Border(bottom: BorderSide(color: Colors.black, width: 2)),
             ),
             child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                 Column(
-                   crossAxisAlignment: CrossAxisAlignment.start,
-                   children: [
-                     const Text('ACADEMIC OVERVIEW', 
-                       style: TextStyle(fontSize: 12, fontWeight: FontWeight.w900, letterSpacing: 1.0)
-                     ),
-                     Text(
-                       '${overview.predictiveSummary.stabilityScore}%',
-                       style: const TextStyle(fontSize: 32, fontWeight: FontWeight.w900, height: 1.1),
-                     ),
-                   ],
-                 ),
-                 Container(
-                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                   decoration: BoxDecoration(
-                     color: overview.riskLevel == 'Low' ? const Color(0xFFA5D6A7) : const Color(0xFFFFCCBC),
-                     borderRadius: BorderRadius.circular(30),
-                     border: Border.all(color: Colors.black, width: 2),
-                   ),
-                   child: Text(
-                     'Risk: ${overview.riskLevel}',
-                     style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
-                   ),
-                 ),
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: Colors.black, width: 2),
+                  ),
+                  child: const Icon(Icons.menu_book, size: 18),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    'SUBJECT MARKS',
+                    style: GoogleFonts.poppins(
+                      fontWeight: FontWeight.w900,
+                      fontSize: 13,
+                      letterSpacing: 1,
+                    ),
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: _barColor(averageMarks.toDouble()),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: Colors.black, width: 2),
+                  ),
+                  child: Text(
+                    'AVG $averageMarks%',
+                    style: GoogleFonts.poppins(
+                      fontWeight: FontWeight.w900,
+                      fontSize: 11,
+                    ),
+                  ),
+                ),
               ],
             ),
           ),
-
-          // 2. Attendance & Details Body(Replaces Subjects)
+          // Subject bars
           Padding(
-            padding: const EdgeInsets.all(24),
+            padding: const EdgeInsets.all(16),
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildMetricBar('Attendance', overview.attendance, const Color(0xFF4DB6AC)),
+                for (int i = 0; i < sorted.length; i++) ...[
+                  if (i > 0) const SizedBox(height: 12),
+                  _buildSubjectBar(sorted[i].key, sorted[i].value, i),
+                ],
               ],
             ),
           ),
@@ -84,52 +102,53 @@ class OverviewCard extends StatelessWidget {
     );
   }
 
-  Widget _buildMetricBar(String label, int value, Color color) {
+  Widget _buildSubjectBar(String subject, double marks, int index) {
+    final color = _barColor(marks);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(
-              label,
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: Colors.black,
+            Flexible(
+              child: Text(
+                subject,
+                style: GoogleFonts.poppins(
+                  fontWeight: FontWeight.w700,
+                  fontSize: 12,
+                ),
+                overflow: TextOverflow.ellipsis,
               ),
             ),
             Text(
-              '$value%',
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: Colors.black,
+              '${marks.toInt()}%',
+              style: GoogleFonts.poppins(
+                fontWeight: FontWeight.w900,
+                fontSize: 12,
+                color: marks < 60 ? const Color(0xFFFF8B94) : Colors.black,
               ),
             ),
           ],
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 4),
         Stack(
           children: [
-            // Background
             Container(
-              height: 24,
+              height: 18,
               decoration: BoxDecoration(
                 color: Colors.grey[200],
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.black, width: 2),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.black, width: 1.5),
               ),
             ),
-            // Fill
             FractionallySizedBox(
-              widthFactor: (value / 100).clamp(0.0, 1.0),
+              widthFactor: (marks / 100).clamp(0.0, 1.0),
               child: Container(
-                height: 24,
+                height: 18,
                 decoration: BoxDecoration(
                   color: color,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.black, width: 2),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.black, width: 1.5),
                 ),
               ),
             ),
