@@ -13,6 +13,7 @@ import 'package:audioplayers/audioplayers.dart';
 import 'package:socket_io_client/socket_io_client.dart' as IO;
 import '../services/vision_service.dart';
 import '../services/student_service.dart';
+import 'ar_camera_qa_page.dart';
 
 class ARModelDetailPage extends StatefulWidget {
   final String modelPath;
@@ -541,32 +542,73 @@ class _ARModelDetailPageState extends State<ARModelDetailPage> {
               ),
             ),
 
-            // Toggle controls button (top-right area, below top bar)
+            // Toggle controls button + Camera Q&A button (top-right, below top bar)
             Positioned(
               top: 60,
               right: 16,
-              child: GestureDetector(
-                onTap: () => setState(() => _showControls = !_showControls),
-                child: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.85),
-                    shape: BoxShape.circle,
-                    border: Border.all(color: Colors.black, width: 2),
-                    boxShadow: const [
-                      BoxShadow(
-                        color: Colors.black,
-                        offset: Offset(2, 2),
-                        blurRadius: 0,
+              child: Column(
+                children: [
+                  // Camera Q&A button — opens live camera with Q&A
+                  GestureDetector(
+                    onTap: () {
+                      _audioPlayer.stop();
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => ARCameraQAPage(
+                            modelTitle: widget.title,
+                            modelPath: _modelSrc ?? widget.modelPath,
+                          ),
+                        ),
+                      );
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF40FFA7),
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.black, width: 2),
+                        boxShadow: const [
+                          BoxShadow(
+                            color: Colors.black,
+                            offset: Offset(2, 2),
+                            blurRadius: 0,
+                          ),
+                        ],
                       ),
-                    ],
+                      child: const Icon(
+                        Icons.camera_alt,
+                        color: Colors.black,
+                        size: 18,
+                      ),
+                    ),
                   ),
-                  child: Icon(
-                    _showControls ? Icons.visibility_off : Icons.mic,
-                    color: Colors.black,
-                    size: 18,
+                  const SizedBox(height: 10),
+                  // Toggle controls
+                  GestureDetector(
+                    onTap: () => setState(() => _showControls = !_showControls),
+                    child: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.85),
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.black, width: 2),
+                        boxShadow: const [
+                          BoxShadow(
+                            color: Colors.black,
+                            offset: Offset(2, 2),
+                            blurRadius: 0,
+                          ),
+                        ],
+                      ),
+                      child: Icon(
+                        _showControls ? Icons.visibility_off : Icons.mic,
+                        color: Colors.black,
+                        size: 18,
+                      ),
+                    ),
                   ),
-                ),
+                ],
               ),
             ),
 
