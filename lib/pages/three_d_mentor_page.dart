@@ -5,8 +5,9 @@ import 'package:audioplayers/audioplayers.dart';
 import 'dart:convert' as convert;
 import 'dart:typed_data';
 import '../services/ai_service.dart';
-import 'package:socket_io_client/socket_io_client.dart' as IO;
 import '../services/student_service.dart';
+import 'package:socket_io_client/socket_io_client.dart' as IO;
+import '../widgets/feedback_dialog.dart';
 
 class ThreeDMentorPage extends StatefulWidget {
   const ThreeDMentorPage({super.key});
@@ -22,8 +23,8 @@ class _ThreeDMentorPageState extends State<ThreeDMentorPage> {
   late IO.Socket _socket;
 
   // State variables
-  String? _studentContext; // Store fetched student data
-  
+  String _studentContext = '';
+
   bool _isSpeaking = false; // Audio playing (lip sync)
   bool _isListening = false; // STT listening
   bool _isProcessing = false; // Backend processing
@@ -59,6 +60,65 @@ class _ThreeDMentorPageState extends State<ThreeDMentorPage> {
     _initSocket();
   }
 
+  Future<void> _fetchStudentContext() async {
+    try {
+      final data = await StudentService.fetchFullStudentData();
+      final profile = data['profile'] ?? {};
+      final perf = data['performance'] ?? {};
+      final currentPerf = perf['currentPerformance'] ?? {};
+      final pi = perf['predictiveIntelligence'] ?? {};
+      final stability = pi['academicStability'] ?? {};
+      final trend = pi['trendAnalysis'] ?? {};
+      final riskBd = pi['riskBreakdown'] ?? {};
+      final alert = pi['smartAlert'] ?? {};
+      final intervention = perf['intervention'] ?? {};
+
+      final buf = StringBuffer();
+      buf.writeln('[STUDENT PROFILE — use ONLY when asked]');
+      buf.writeln('Name: ${profile['name'] ?? 'N/A'}');
+      buf.writeln('Student ID: ${profile['studentId'] ?? 'N/A'}');
+      buf.writeln('Email: ${profile['email'] ?? 'N/A'}');
+      buf.writeln('Class: ${profile['classes'] ?? 'N/A'} | Course: ${profile['Course'] ?? 'N/A'}');
+      buf.writeln('Institute: ${profile['instituteName'] ?? 'N/A'}');
+      buf.writeln('Marks: ${profile['marks'] ?? 'N/A'} | Attendance: ${profile['attendance'] ?? 'N/A'}');
+
+      buf.writeln('');
+      buf.writeln('[PERFORMANCE — use ONLY when asked about scores/performance/risk]');
+      buf.writeln('Overall Score: ${perf['score'] ?? 'N/A'}/100 | Risk: ${perf['riskLevel'] ?? 'N/A'} | Trend: ${perf['trend'] ?? 'N/A'}');
+      buf.writeln('Attendance: ${currentPerf['attendance'] ?? 'N/A'}% | Internal Marks: ${currentPerf['internalMarks'] ?? 'N/A'}%');
+
+      final strengths = perf['strengths'];
+      if (strengths is List && strengths.isNotEmpty) {
+        buf.writeln('Strengths: ${strengths.join(', ')}');
+      }
+      final concerns = perf['concerns'];
+      if (concerns is List && concerns.isNotEmpty) {
+        buf.writeln('Concerns: ${concerns.join(', ')}');
+      }
+      final recs = perf['recommendations'];
+      if (recs is List && recs.isNotEmpty) {
+        buf.writeln('Recommendations: ${recs.take(3).join('; ')}');
+      }
+
+      if (stability.isNotEmpty) {
+        buf.writeln('Stability: ${stability['stabilityScore'] ?? 'N/A'}/100 | Failure Risk: ${stability['finalRisk'] ?? 'N/A'}%');
+      }
+      if (riskBd.isNotEmpty) {
+        buf.writeln('Primary Weakness: ${riskBd['primaryWeakness'] ?? 'N/A'}');
+      }
+      if (alert.isNotEmpty) {
+        buf.writeln('Alert: ${alert['level'] ?? 'N/A'} — ${alert['message'] ?? 'None'}');
+      }
+      if (intervention['required'] == true) {
+        buf.writeln('Intervention: ${intervention['priority'] ?? 'N/A'} priority');
+      }
+
+      if (mounted) setState(() => _studentContext = buf.toString());
+    } catch (e) {
+      print("Error fetching student context: $e");
+    }
+  }
+
   void _initSocket() {
     _socket = IO.io('https://campuspp-f7qx.onrender.com', IO.OptionBuilder()
         .setTransports(['websocket'])
@@ -73,8 +133,7 @@ class _ThreeDMentorPageState extends State<ThreeDMentorPage> {
       if (mounted) {
         setState(() {
           _isProcessing = false;
-          // Only update the text if it's the AI response
-          _text = data['response'] ?? "I couldn't process that.";
+          _text = _cleanMarkdown(data['response'] ?? "I couldn't process that.");
         });
       }
     });
@@ -107,30 +166,6 @@ class _ThreeDMentorPageState extends State<ThreeDMentorPage> {
     });
   }
 
-  Future<void> _fetchStudentContext() async {
-    try {
-      final data = await StudentService.fetchFullStudentData();
-      // Format data for AI
-      final profile = data['profile'] ?? {};
-      final perf = data['performance'] ?? {};
-      final currentPerf = perf['currentPerformance'] ?? {};
-      
-      String context = """
-      Name: ${profile['name']}
-      Course: ${profile['Course']}
-      Attendance: ${currentPerf['attendance']}%
-      Marks: ${currentPerf['currentPerformance']?['internalMarks'] ?? 'N/A'}
-      Risk Level: ${currentPerf['riskLevel']}
-      Strengths: ${currentPerf['strengths']?.join(', ') ?? 'N/A'}
-      Concerns: ${currentPerf['concerns']?.join(', ') ?? 'N/A'}
-      """;
-      
-      setState(() => _studentContext = context);
-      print("Student Context Loaded: $_studentContext");
-    } catch (e) {
-      print("Error fetching student context: $e");
-    }
-  }
 
 
   void _initAudioPlayer() {
@@ -149,6 +184,23 @@ class _ThreeDMentorPageState extends State<ThreeDMentorPage> {
 
   void _initSpeech() async {
     _speech = stt.SpeechToText();
+  }
+
+  String _cleanMarkdown(String text) {
+    return text
+        .replaceAll(RegExp(r'\*\*(.+?)\*\*'), r'$1')
+        .replaceAll(RegExp(r'\*(.+?)\*'), r'$1')
+        .replaceAll(RegExp(r'__(.+?)__'), r'$1')
+        .replaceAll(RegExp(r'_(.+?)_'), r'$1')
+        .replaceAll(RegExp(r'~~(.+?)~~'), r'$1')
+        .replaceAll(RegExp(r'`(.+?)`'), r'$1')
+        .replaceAll(RegExp(r'^#+\s*', multiLine: true), '')
+        .replaceAll(RegExp(r'^\s*[-*]\s+', multiLine: true), '')
+        .replaceAll(RegExp(r'^\s*\d+\.\s+', multiLine: true), '')
+        .replaceAll('\\n', '\n')
+        .replaceAll('\\\\', '')
+        .replaceAll(RegExp(r'\n{3,}'), '\n\n')
+        .trim();
   }
 
   void _listen() async {
@@ -220,12 +272,17 @@ class _ThreeDMentorPageState extends State<ThreeDMentorPage> {
     final String backendLang =
         _backendLangKey[_selectedLangDisplayKey] ?? 'english';
 
-    // Base system prompt — backend will append language-specific instructions
-    // (see buildPromptWithProfile in the backend controller)
-    const String systemPrompt =
-        'You are a helpful and knowledgeable teacher named Deepak. '
-        'You are mentoring a student. Keep answers under 3 sentences. '
-        'Use provided student data only when the user asks something personal.';
+    // Base system prompt — conversational, human, short
+    final String systemPrompt =
+        'You are Deepak, a friendly teacher talking to a student. '
+        'Talk like a real human — warm, casual, natural. Not robotic. '
+        'Keep it super short: 1-2 sentences MAX. No bullet points, no lists, no headings. '
+        'Just talk naturally like you would face to face. '
+        'Do NOT use markdown formatting (no **, no ##, no bullets). Plain text only. '
+        'Never dump all info at once. Answer only what they asked, nothing extra. '
+        'If they greet you, just greet back briefly. '
+        'You know their details but only mention them if they ask or if it is directly relevant.'
+        '${_studentContext.isNotEmpty ? '\n\n$_studentContext' : ''}';
 
     _socket.emit('textMessage', {
       'message': input,
@@ -281,9 +338,15 @@ class _ThreeDMentorPageState extends State<ThreeDMentorPage> {
             top: 40,
             left: 20,
             child: GestureDetector(
-              onTap: () {
+              onTap: () async {
                  _audioPlayer.stop();
-                 Navigator.pop(context);
+                 // Randomly show user feedback dialog when leaving mentor
+                 await maybeShowFeedbackDialog(
+                   context,
+                   feature: FeedbackFeature.threeDMentor,
+                   featureDisplayName: '3D Mentor',
+                 );
+                 if (context.mounted) Navigator.pop(context);
               },
               child: Container(
                 padding: const EdgeInsets.all(10),

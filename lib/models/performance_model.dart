@@ -180,6 +180,7 @@ class OverviewData {
   final int internalMarks;
   final int assignmentScore;
   final int lmsEngagement;
+  final Map<String, double> subjectMarks;
   final PredictiveSummaryData predictiveSummary;
 
   OverviewData({
@@ -188,16 +189,27 @@ class OverviewData {
     required this.internalMarks,
     required this.assignmentScore,
     required this.lmsEngagement,
+    required this.subjectMarks,
     required this.predictiveSummary,
   });
 
   factory OverviewData.fromJson(Map<String, dynamic> json) {
+    final rawSubjects = json['subjectMarks'];
+    final Map<String, double> subjects = {};
+    if (rawSubjects is Map) {
+      rawSubjects.forEach((key, value) {
+        final v = double.tryParse(value.toString());
+        if (v != null) subjects[key.toString()] = v;
+      });
+    }
+
     return OverviewData(
       riskLevel: json['riskLevel']?.toString() ?? 'Unknown',
       attendance: (json['attendance'] as num?)?.toInt() ?? 0,
       internalMarks: (json['internalMarks'] as num?)?.toInt() ?? 0,
       assignmentScore: (json['assignmentScore'] as num?)?.toInt() ?? 0,
       lmsEngagement: (json['lmsEngagement'] as num?)?.toInt() ?? 0,
+      subjectMarks: subjects,
       predictiveSummary: PredictiveSummaryData.fromJson(json['predictiveSummary'] ?? {}),
     );
   }

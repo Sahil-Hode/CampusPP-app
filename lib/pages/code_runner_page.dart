@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../services/code_runner_service.dart';
+import '../widgets/feedback_dialog.dart';
 import 'github_oauth_page.dart';
 
 import 'package:code_text_field/code_text_field.dart';
@@ -326,6 +327,13 @@ class _CodeRunnerPageState extends State<CodeRunnerPage>
         // ++ AUTO DEBUG FLOW ++ //
         if (hasError) {
           _triggerAutoDebug(trimmed);
+        } else {
+          // Randomly show user feedback dialog after successful run
+          maybeShowFeedbackDialog(
+            context,
+            feature: FeedbackFeature.codeRunner,
+            featureDisplayName: 'Code Runner',
+          );
         }
       }
     } catch (e) {

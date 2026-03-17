@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../services/auth_service.dart';
+import '../widgets/feedback_dialog.dart';
 
 // ─── THEME CONSTANTS ────────────────────────────────────────────────────────
 const _bg        = Color(0xFFC2EED5);
@@ -75,6 +76,14 @@ class _AiCouncilScreenState extends State<AiCouncilScreen>
       if (gen.statusCode == 200 || gen.statusCode == 201) {
         final data = jsonDecode(gen.body)['data'];
         _animCtrl.forward();
+        // Randomly show user feedback dialog after viewing council
+        if (mounted) {
+          maybeShowFeedbackDialog(
+            context,
+            feature: FeedbackFeature.aiCouncil,
+            featureDisplayName: 'AI Council',
+          );
+        }
         return data;
       }
 

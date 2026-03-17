@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 import 'auth_service.dart';
 import '../models/performance_model.dart';
 import '../models/student_profile_model.dart';
+import '../models/faculty_annotation_model.dart';
 import 'package:http_parser/http_parser.dart';
 
 class StudentService {
@@ -613,6 +614,52 @@ class StudentService {
 
     if (response.statusCode != 200 && response.statusCode != 204) {
       throw Exception('Failed to delete learning path: ${response.body}');
+    }
+  }
+
+  static Future<List<FacultyAnnotation>> getFacultyNotes() async {
+    final token = await AuthService.getToken();
+    if (token == null) throw Exception('No token found');
+
+    final studentId = _extractStudentIdFromToken(token);
+    if (studentId.isEmpty) throw Exception('Could not extract studentId');
+
+    final url = '$_baseUrl/faculty-annotations/student/$studentId?t=${DateTime.now().millisecondsSinceEpoch}';
+    final response = await http.get(
+      Uri.parse(url),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Accept': 'application/json',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      final json = jsonDecode(response.body);
+      if (json['success'] == true && json['data'] != null) {
+        return (json['data'] as List)
+            .map((item) => FacultyAnnotation.fromJson(item))
+            .toList();
+      }
+      return [];
+    } else {
+      throw Exception('Failed to load faculty notes');
+    }
+  }
+
+  static String _extractStudentIdFromToken(String token) {
+    try {
+      final parts = token.split('.');
+      if (parts.length != 3) return '';
+      String payload = parts[1];
+      switch (payload.length % 4) {
+        case 2: payload += '=='; break;
+        case 3: payload += '='; break;
+      }
+      final decoded = utf8.decode(base64Url.decode(payload));
+      final data = jsonDecode(decoded);
+      return data['studentId'] ?? '';
+    } catch (_) {
+      return '';
     }
   }
 }

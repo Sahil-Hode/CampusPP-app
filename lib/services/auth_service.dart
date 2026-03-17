@@ -1,5 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'notification_service.dart';
 
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -60,6 +62,17 @@ class AuthService {
 
   static Future<void> logout() async {
     final prefs = await SharedPreferences.getInstance();
+    
+    // Unregister FCM token before removing auth token
+    try {
+        final fcmToken = await FirebaseMessaging.instance.getToken();
+        if (fcmToken != null) {
+            await NotificationService.unregisterToken(fcmToken);
+        }
+    } catch (e) {
+        print('Error unregistering FCM token on logout: $e');
+    }
+
     await prefs.remove('auth_token');
     print('Token removed');
   }

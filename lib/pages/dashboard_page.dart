@@ -1,6 +1,8 @@
 ﻿import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
+import '../providers/notification_provider.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../models/student_model.dart'; // Keep for other sample data if needed
 import '../models/performance_model.dart';
@@ -10,7 +12,6 @@ import 'ai_analysis_page.dart';
 import 'resume_upload_page.dart';
 import 'profile_page.dart';
 import 'ai_council_page.dart';
-import 'chatbot_page.dart';
 import '../widgets/attendance_card.dart';
 import '../widgets/lms_engagement_card.dart';
 import 'score_breakdown_page.dart';
@@ -25,9 +26,11 @@ import '../widgets/quiz_overview_card.dart';
 import '../services/quiz_service.dart';
 import '../models/quiz_model.dart';
 import 'ar_viewer_page.dart';
-import 'vr_interview_page.dart';
+
 import 'predictive_dashboard_page.dart';
 import 'code_runner_page.dart';
+import 'gamification_page.dart';
+import 'faculty_notes_page.dart';
 
 
 import '../models/student_profile_model.dart';
@@ -49,6 +52,9 @@ class _DashboardPageState extends State<DashboardPage> {
   void initState() {
     super.initState();
     _fetchDashboardData();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<NotificationProvider>().fetchUnreadCount();
+    });
   }
 
   ImageProvider _buildAvatarImage() {
@@ -271,7 +277,7 @@ class _DashboardPageState extends State<DashboardPage> {
                     ),
                   ),
                   const SizedBox(width: 6),
-                  // Keep header on one line: compact risk + chatbot
+                  // Keep header on one line: compact risk + notification
                   GestureDetector(
                     onTap: () {
                       _showRiskPopup();
@@ -313,33 +319,62 @@ class _DashboardPageState extends State<DashboardPage> {
                     ),
                   ),
                   const SizedBox(width: 8),
-                  // Chatbot Button (Moved here)
+                  // Notification Bell Button
                   GestureDetector(
                     onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => const ChatbotPage()),
-                      );
+                      Navigator.pushNamed(context, '/notifications');
                     },
-                    child: Container(
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        shape: BoxShape.circle,
-                        border: Border.all(color: Colors.black, width: 2),
-                        boxShadow: const [
-                          BoxShadow(
-                            color: Colors.black,
-                            offset: Offset(2, 2),
-                            blurRadius: 0,
-                          ),
-                        ],
-                      ),
-                      child: const Icon(
-                        Icons.smart_toy, // Unique AI/Chatbot icon
-                        color: Colors.black,
-                        size: 22,
-                      ),
+                    child: Consumer<NotificationProvider>(
+                      builder: (context, notifProvider, _) {
+                        return Stack(
+                          clipBehavior: Clip.none,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(10),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                shape: BoxShape.circle,
+                                border: Border.all(color: Colors.black, width: 2),
+                                boxShadow: const [
+                                  BoxShadow(
+                                    color: Colors.black,
+                                    offset: Offset(2, 2),
+                                    blurRadius: 0,
+                                  ),
+                                ],
+                              ),
+                              child: const Icon(
+                                Icons.notifications_outlined,
+                                color: Colors.black,
+                                size: 22,
+                              ),
+                            ),
+                            if (notifProvider.unreadCount > 0)
+                              Positioned(
+                                right: -4,
+                                top: -4,
+                                child: Container(
+                                  padding: const EdgeInsets.all(4),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFFF8B94),
+                                    shape: BoxShape.circle,
+                                    border: Border.all(color: Colors.black, width: 1.5),
+                                  ),
+                                  child: Text(
+                                    notifProvider.unreadCount > 9
+                                        ? '9+'
+                                        : '${notifProvider.unreadCount}',
+                                    style: GoogleFonts.poppins(
+                                      fontSize: 8,
+                                      fontWeight: FontWeight.w900,
+                                      color: Colors.black,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                          ],
+                        );
+                      },
                     ),
                   ),
                 ],
@@ -483,6 +518,15 @@ class _DashboardPageState extends State<DashboardPage> {
 
                     const SizedBox(height: 16),
 
+                    // --- Subject Marks Card ---
+                    if (_overviewData != null && _overviewData!.subjectMarks.isNotEmpty)
+                      SubjectMarksCard(
+                        subjectMarks: _overviewData!.subjectMarks,
+                        averageMarks: _overviewData!.internalMarks,
+                      ),
+
+                    const SizedBox(height: 16),
+
                     // --- AI Council Directive Card (Neobrutalist Verdict Style) ---
                     if (_councilData != null)
                       _buildCouncilCard()
@@ -527,166 +571,13 @@ class _DashboardPageState extends State<DashboardPage> {
                         _buildQuickActionButton(
                           context,
                           icon: Icons.camera_alt_outlined,
-                          label: 'AR/VR Models',
+                          label: 'AR Models',
                           subtitle: 'Immersive',
                           color: const Color(0xFFE8EAF6),
                           iconBgColor: const Color(0xFF7986CB),
                           textColor: Colors.black,
                           onTap: () {
-                            showModalBottomSheet(
-                              context: context,
-                              backgroundColor: Colors.transparent, // Match brutalist theme
-                              isScrollControlled: true,
-                              builder: (context) => Container(
-                                margin: const EdgeInsets.all(16),
-                                padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 20),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFFFF9C4), // Retro yellow background
-                                  borderRadius: BorderRadius.circular(16),
-                                  border: Border.all(color: Colors.black, width: 3),
-                                  boxShadow: const [
-                                    BoxShadow(
-                                      color: Colors.black,
-                                      offset: Offset(6, 6),
-                                      blurRadius: 0,
-                                    ),
-                                  ],
-                                ),
-                                child: Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                                  children: [
-                                    Center(
-                                      child: Text(
-                                        'CHOOSE EXPERIENCE',
-                                        style: GoogleFonts.poppins(
-                                          fontSize: 22,
-                                          fontWeight: FontWeight.w900,
-                                          color: Colors.black,
-                                          letterSpacing: -0.5,
-                                        ),
-                                      ),
-                                    ),
-                                    const SizedBox(height: 24),
-                                    // AR Models Brutalist Card
-                                    GestureDetector(
-                                      onTap: () {
-                                        Navigator.pop(context);
-                                        Navigator.push(context, MaterialPageRoute(builder: (context) => const ARViewerPage()));
-                                      },
-                                      child: Container(
-                                        padding: const EdgeInsets.all(16),
-                                        decoration: BoxDecoration(
-                                          color: const Color(0xFFE8EAF6),
-                                          borderRadius: BorderRadius.circular(12),
-                                          border: Border.all(color: Colors.black, width: 2.5),
-                                          boxShadow: const [
-                                            BoxShadow(
-                                              color: Colors.black,
-                                              offset: Offset(4, 4),
-                                              blurRadius: 0,
-                                            ),
-                                          ],
-                                        ),
-                                        child: Row(
-                                          children: [
-                                            Container(
-                                              padding: const EdgeInsets.all(12),
-                                              decoration: BoxDecoration(
-                                                color: const Color(0xFF7986CB),
-                                                shape: BoxShape.circle,
-                                                border: Border.all(color: Colors.black, width: 2),
-                                              ),
-                                              child: const Icon(Icons.camera_alt_outlined, color: Colors.white, size: 28),
-                                            ),
-                                            const SizedBox(width: 16),
-                                            Expanded(
-                                              child: Column(
-                                                crossAxisAlignment: CrossAxisAlignment.start,
-                                                children: [
-                                                  Text('AR Models', style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.w900, color: Colors.black)),
-                                                  Text('Explore in your space', style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.black87)),
-                                                ],
-                                              ),
-                                            ),
-                                            const Icon(Icons.arrow_forward, color: Colors.black),
-                                          ],
-                                        ),
-                                      ),
-                                    ),
-                                    const SizedBox(height: 16),
-                                    // VR Interview Brutalist Card
-                                    GestureDetector(
-                                      onTap: () {
-                                        Navigator.pop(context);
-                                        Navigator.push(context, MaterialPageRoute(builder: (context) => const VRInterviewPage()));
-                                      },
-                                      child: Container(
-                                        padding: const EdgeInsets.all(16),
-                                        decoration: BoxDecoration(
-                                          color: const Color(0xFFF3E5F5),
-                                          borderRadius: BorderRadius.circular(12),
-                                          border: Border.all(color: Colors.black, width: 2.5),
-                                          boxShadow: const [
-                                            BoxShadow(
-                                              color: Colors.black,
-                                              offset: Offset(4, 4),
-                                              blurRadius: 0,
-                                            ),
-                                          ],
-                                        ),
-                                        child: Row(
-                                          children: [
-                                            Container(
-                                              padding: const EdgeInsets.all(12),
-                                              decoration: BoxDecoration(
-                                                color: const Color(0xFF9C27B0),
-                                                shape: BoxShape.circle,
-                                                border: Border.all(color: Colors.black, width: 2),
-                                              ),
-                                              child: const Icon(Icons.headset_mic_outlined, color: Colors.white, size: 28),
-                                            ),
-                                            const SizedBox(width: 16),
-                                            Expanded(
-                                              child: Column(
-                                                crossAxisAlignment: CrossAxisAlignment.start,
-                                                children: [
-                                                  Text('VR Interview', style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.w900, color: Colors.black)),
-                                                  Text('Immersive AI Mock Session', style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.black87)),
-                                                ],
-                                              ),
-                                            ),
-                                            const Icon(Icons.arrow_forward, color: Colors.black),
-                                          ],
-                                        ),
-                                      ),
-                                    ),
-                                    const SizedBox(height: 24),
-                                    // Cancel button
-                                    GestureDetector(
-                                      onTap: () => Navigator.pop(context),
-                                      child: Container(
-                                        padding: const EdgeInsets.symmetric(vertical: 14),
-                                        decoration: BoxDecoration(
-                                          color: Colors.white,
-                                          borderRadius: BorderRadius.circular(100),
-                                          border: Border.all(color: Colors.black, width: 2),
-                                          boxShadow: const [
-                                            BoxShadow(
-                                              color: Colors.black,
-                                              offset: Offset(3, 3),
-                                            ),
-                                          ],
-                                        ),
-                                        child: Center(
-                                          child: Text('CANCEL', style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w900, color: Colors.black)),
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            );
+                            Navigator.push(context, MaterialPageRoute(builder: (context) => const ARViewerPage()));
                           },
                         ),
                         _buildQuickActionButton(
@@ -709,6 +600,28 @@ class _DashboardPageState extends State<DashboardPage> {
                           iconBgColor: const Color(0xFF5C6BC0),
                           textColor: Colors.black,
                           onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const CodeRunnerPage())),
+                        ),
+
+                        _buildQuickActionButton(
+                          context,
+                          icon: Icons.emoji_events,
+                          label: 'Rewards',
+                          subtitle: 'XP & Badges',
+                          color: const Color(0xFFFFF9C4),
+                          iconBgColor: const Color(0xFFF59E0B),
+                          textColor: Colors.black,
+                          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const GamificationPage())),
+                        ),
+
+                        _buildQuickActionButton(
+                          context,
+                          icon: Icons.school,
+                          label: 'Faculty Notes',
+                          subtitle: 'Guidance',
+                          color: const Color(0xFFE1BEE7),
+                          iconBgColor: const Color(0xFF9C27B0),
+                          textColor: Colors.black,
+                          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const FacultyNotesPage())),
                         ),
                       ],
                     ),
@@ -1157,7 +1070,7 @@ class _DashboardPageState extends State<DashboardPage> {
 
 
 
-  Widget _buildNavItem(BuildContext context, IconData icon, String label, bool isActive, {bool isProgress = false, bool isPath = false, bool isChat = false, bool is3DMentor = false}) {
+  Widget _buildNavItem(BuildContext context, IconData icon, String label, bool isActive, {bool isProgress = false, bool isPath = false, bool is3DMentor = false}) {
     final screenWidth = MediaQuery.of(context).size.width;
     final iconSize = (screenWidth * 0.055).clamp(18.0, 30.0);
     final iconPadding = (screenWidth * 0.025).clamp(6.0, 14.0);
@@ -1176,12 +1089,6 @@ class _DashboardPageState extends State<DashboardPage> {
           Navigator.of(context).push(
             MaterialPageRoute(
               builder: (context) => const LearningPathPage(), // Navigate to Learning Path
-            ),
-          );
-        } else if (isChat) {
-          Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (context) => const ChatbotPage(),
             ),
           );
         } else if (is3DMentor) {
