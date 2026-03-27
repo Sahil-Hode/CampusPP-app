@@ -4,6 +4,8 @@ import 'package:speech_to_text/speech_to_text.dart' as stt;
 import 'package:audioplayers/audioplayers.dart';
 import 'dart:convert' as convert;
 import 'dart:typed_data';
+import 'dart:ui';
+import 'package:google_fonts/google_fonts.dart';
 import '../services/ai_service.dart';
 import '../services/student_service.dart';
 import 'package:socket_io_client/socket_io_client.dart' as IO;
@@ -335,7 +337,7 @@ class _ThreeDMentorPageState extends State<ThreeDMentorPage> {
 
           // 2. Back Button (Top Left)
           Positioned(
-            top: 40,
+            top: 50,
             left: 20,
             child: GestureDetector(
               onTap: () async {
@@ -348,144 +350,189 @@ class _ThreeDMentorPageState extends State<ThreeDMentorPage> {
                  );
                  if (context.mounted) Navigator.pop(context);
               },
-              child: Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.7),
-                  shape: BoxShape.circle,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(30),
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                  child: Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.2),
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.white.withOpacity(0.4), width: 1.5),
+                    ),
+                    child: const Icon(Icons.arrow_back, color: Colors.white, size: 24),
+                  ),
                 ),
-                child: const Icon(Icons.arrow_back, color: Colors.black),
               ),
             ),
           ),
 
-          // 3. Transparent Bottom Controls
+          // 3. Floating Bottom Controls (No background)
           Positioned(
-            bottom: 0,
-            left: 0,
-            right: 0,
-            child: Container(
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.bottomCenter,
-                  end: Alignment.topCenter,
-                  colors: [
-                    Colors.black.withOpacity(0.6), // Darker at bottom
-                    Colors.transparent, // Fade to transparent
-                  ],
-                ),
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(30),
-                  topRight: Radius.circular(30),
-                ),
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // Language & Status Row
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      // Language Selector Bubble
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.8),
-                          borderRadius: BorderRadius.circular(20),
+            bottom: 40,
+            left: 24,
+            right: 24,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Subtitle / Text Bubble
+                if (_text.isNotEmpty && !_isProcessing)
+                  Container(
+                    constraints: const BoxConstraints(maxHeight: 180),
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+                    margin: const EdgeInsets.only(bottom: 30),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withOpacity(0.65),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: Colors.white.withOpacity(0.2), width: 1),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.3),
+                          blurRadius: 15,
+                          offset: const Offset(0, 5),
                         ),
-                        child: DropdownButtonHideUnderline(
-                          child: DropdownButton<String>(
-                            value: _selectedLangDisplayKey,
-                            isDense: true,
-                            icon: const Icon(Icons.arrow_drop_down, color: Colors.black),
-                            items: _languages.entries.map((entry) {
-                              return DropdownMenuItem(
-                                value: entry.key, // use display name as value
-                                child: Text(
-                                  entry.key,
-                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                      ],
+                    ),
+                    child: SingleChildScrollView(
+                      child: Text(
+                        _text,
+                        style: GoogleFonts.poppins(
+                          color: Colors.white, 
+                          fontSize: 15,
+                          height: 1.5,
+                          fontWeight: FontWeight.w500,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  ),
+
+                // Bottom Action Row
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    // Language Selector
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.only(left: 4, bottom: 6),
+                          child: Text(
+                            "LANGUAGE",
+                            style: GoogleFonts.poppins(
+                              color: Colors.white,
+                              fontSize: 10,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: 1.2,
+                              shadows: [Shadow(color: Colors.black.withOpacity(0.8), blurRadius: 4, offset: Offset(1, 1))],
+                            ),
+                          ),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withOpacity(0.65),
+                            borderRadius: BorderRadius.circular(24),
+                            border: Border.all(color: Colors.white.withOpacity(0.2), width: 1),
+                            boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.3), blurRadius: 10, offset: Offset(0, 4))],
+                          ),
+                          child: DropdownButtonHideUnderline(
+                            child: DropdownButton<String>(
+                              value: _selectedLangDisplayKey,
+                              isDense: true,
+                              dropdownColor: const Color(0xFF2D2D2D),
+                              icon: const Icon(Icons.keyboard_arrow_down_rounded, color: Colors.white, size: 20),
+                              items: _languages.entries.map((entry) {
+                                return DropdownMenuItem(
+                                  value: entry.key,
+                                  child: Text(
+                                    entry.key,
+                                    style: GoogleFonts.poppins(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 13,
+                                    ),
+                                  ),
+                                );
+                              }).toList(),
+                              onChanged: (displayName) {
+                                if (displayName != null) {
+                                  setState(() {
+                                    _selectedLangDisplayKey = displayName;
+                                    _selectedLanguage = _languages[displayName] ?? 'en-US';
+                                  });
+                                  _socket.emit('setLanguage', {
+                                    'language': _backendLangKey[displayName] ?? 'english',
+                                  });
+                                }
+                              },
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    // Mic Button Center
+                    Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        GestureDetector(
+                          onTap: _listen,
+                          child: TweenAnimationBuilder<double>(
+                            tween: Tween(begin: 1.0, end: _isListening ? 1.15 : 1.0),
+                            duration: const Duration(milliseconds: 300),
+                            curve: Curves.easeInOutBack,
+                            builder: (context, scale, child) {
+                              return Transform.scale(
+                                scale: scale,
+                                child: Container(
+                                  height: 72,
+                                  width: 72,
+                                  decoration: BoxDecoration(
+                                    color: _isListening ? const Color(0xFFFF4B4B) : const Color(0xFF40FFA7),
+                                    shape: BoxShape.circle,
+                                    border: Border.all(color: Colors.white, width: 2.5),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: (_isListening ? const Color(0xFFFF4B4B) : const Color(0xFF40FFA7)).withOpacity(0.5),
+                                        blurRadius: _isListening ? 25 : 15,
+                                        spreadRadius: _isListening ? 5 : 0,
+                                      ),
+                                    ],
+                                  ),
+                                  child: Icon(
+                                    _isListening ? Icons.mic_off_rounded : Icons.mic_rounded,
+                                    size: 34,
+                                    color: _isListening ? Colors.white : Colors.black,
+                                  ),
                                 ),
                               );
-                            }).toList(),
-                            onChanged: (displayName) {
-                              if (displayName != null) {
-                                setState(() {
-                                  _selectedLangDisplayKey = displayName;
-                                  _selectedLanguage =
-                                      _languages[displayName] ?? 'en-US';
-                                });
-                                // Notify backend of language switch
-                                _socket.emit('setLanguage', {
-                                  'language': _backendLangKey[displayName] ?? 'english',
-                                });
-                              }
                             },
                           ),
                         ),
-                      ),
-                      
-                      // Status Text
-                      if (_isProcessing)
-                         const Text(
-                           "Thinking...",
-                           style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-                         ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 16),
-
-                  // Recognized Text Display (Floating above mic)
-                  if (_text.isNotEmpty && !_isProcessing)
-                    Container(
-                      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-                      margin: const EdgeInsets.only(bottom: 16),
-                      decoration: BoxDecoration(
-                        color: Colors.black.withOpacity(0.4),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Text(
-                        _text,
-                        style: const TextStyle(color: Colors.white, fontSize: 14),
-                        textAlign: TextAlign.center,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-
-                  // Mic Button
-                  GestureDetector(
-                    onTap: _listen,
-                    child: Container(
-                      height: 70,
-                      width: 70,
-                      decoration: BoxDecoration(
-                        color: _isListening ? Colors.redAccent : const Color(0xFF40FFA7),
-                        shape: BoxShape.circle,
-                        border: Border.all(color: Colors.white, width: 3),
-                        boxShadow: [
-                          BoxShadow(
-                            color: (_isListening ? Colors.red : const Color(0xFF40FFA7)).withOpacity(0.5),
-                            blurRadius: 15,
-                            spreadRadius: 2,
+                        const SizedBox(height: 12),
+                        Text(
+                          _isProcessing ? "PROCESSING..." : (_isListening ? "LISTENING..." : "TAP TO SPEAK"),
+                          style: GoogleFonts.poppins(
+                            color: _isProcessing ? Colors.blueAccent[100] : Colors.white,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 1.5,
+                            shadows: [Shadow(color: Colors.black.withOpacity(0.8), blurRadius: 4, offset: Offset(1, 1))],
                           ),
-                        ],
-                      ),
-                      child: Icon(
-                        _isListening ? Icons.mic_off : Icons.mic,
-                        size: 32,
-                        color: _isListening ? Colors.white : Colors.black,
-                      ),
+                        ),
+                      ],
                     ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    _isListening ? "Listening..." : "Tap to Speak",
-                    style: const TextStyle(color: Colors.white70, fontSize: 12),
-                  ),
-                ],
-              ),
+
+                    // Empty spacer for layout balance
+                    const SizedBox(width: 80), 
+                  ],
+                ),
+              ],
             ),
           ),
         ],

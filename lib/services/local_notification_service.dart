@@ -15,7 +15,7 @@ class LocalNotificationService {
 
     // Get the shared preferences for redirect storage
     await _plugin.initialize(
-      settings: const InitializationSettings(android: androidSettings, iOS: iosSettings),
+      const InitializationSettings(android: androidSettings, iOS: iosSettings),
       onDidReceiveNotificationResponse: (response) {
         if (response.payload != null) {
             // Because the flutter local notification plugin may be handling clicks when the app is in
@@ -74,10 +74,10 @@ class LocalNotificationService {
             : 'info_alerts';
 
     await _plugin.show(
-      id: DateTime.now().millisecondsSinceEpoch ~/ 1000,
-      title: title,
-      body: body,
-      notificationDetails: NotificationDetails(
+      DateTime.now().millisecondsSinceEpoch ~/ 1000,
+      title,
+      body,
+      NotificationDetails(
         android: AndroidNotificationDetails(
           channelId,
           channelId == 'critical_alerts'

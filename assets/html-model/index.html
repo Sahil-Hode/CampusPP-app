@@ -1,93 +1,293 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Campus++ Real-Time Mock Interview</title>
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { overflow: hidden; background: #0b111a; color: #e7f1ff; font-family: "Segoe UI", Arial, sans-serif; }
-    canvas { display: block; }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      overflow: hidden;
+      background: #0b111a;
+      color: #e7f1ff;
+      font-family: "Segoe UI", Arial, sans-serif;
+    }
+
+    canvas {
+      display: block;
+    }
+
     .panel {
-      position: fixed; top: 12px; left: 50%; transform: translateX(-50%); z-index: 20;
+      position: fixed;
+      top: 12px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 20;
       width: min(860px, calc(100vw - 24px));
-      background: rgba(7, 16, 27, 0.84); border: 1px solid rgba(100, 186, 255, 0.35); border-radius: 14px;
-      backdrop-filter: blur(10px); padding: 14px; transition: transform 0.25s ease, opacity 0.25s ease;
+      background: rgba(7, 16, 27, 0.84);
+      border: 1px solid rgba(100, 186, 255, 0.35);
+      border-radius: 14px;
+      backdrop-filter: blur(10px);
+      padding: 14px;
+      transition: transform 0.25s ease, opacity 0.25s ease;
     }
-    .panel.hidden { transform: translate(-50%, -140%); opacity: 0; pointer-events: none; }
-    .title { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-    .title h1 { font-size: 17px; color: #9ad5ff; }
-    .badge { font-size: 12px; color: #8fd0ff; background: rgba(64, 148, 212, 0.2); padding: 6px 10px; border-radius: 999px; }
-    .row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+
+    .panel.hidden {
+      transform: translate(-50%, -140%);
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .title {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .title h1 {
+      font-size: 17px;
+      color: #9ad5ff;
+    }
+
+    .badge {
+      font-size: 12px;
+      color: #8fd0ff;
+      background: rgba(64, 148, 212, 0.2);
+      padding: 6px 10px;
+      border-radius: 999px;
+    }
+
+    .row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 10px;
+    }
+
     .row input {
-      min-width: 220px; flex: 1; border: 1px solid rgba(130, 179, 211, 0.25);
-      border-radius: 9px; padding: 10px 12px; background: #102538; color: #d8ecff;
+      min-width: 220px;
+      flex: 1;
+      border: 1px solid rgba(130, 179, 211, 0.25);
+      border-radius: 9px;
+      padding: 10px 12px;
+      background: #102538;
+      color: #d8ecff;
     }
+
     button {
-      border: none; border-radius: 9px; padding: 10px 12px; font-weight: 700; cursor: pointer;
-      background: #65c8ff; color: #03243d;
+      border: none;
+      border-radius: 9px;
+      padding: 10px 12px;
+      font-weight: 700;
+      cursor: pointer;
+      background: #65c8ff;
+      color: #03243d;
     }
-    button.secondary { background: #1d3f5a; color: #c8e8ff; }
-    button.danger { background: #8a2f43; color: #ffd9e1; }
-    button:disabled { opacity: 0.5; cursor: not-allowed; }
-    .status { font-size: 13px; color: #b9d5ea; margin-bottom: 8px; min-height: 20px; }
-    .live { color: #9fffc3; font-weight: 600; }
-    .interim { color: #9fb8cb; font-style: italic; }
+
+    button.secondary {
+      background: #1d3f5a;
+      color: #c8e8ff;
+    }
+
+    button.danger {
+      background: #8a2f43;
+      color: #ffd9e1;
+    }
+
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .status {
+      font-size: 13px;
+      color: #b9d5ea;
+      margin-bottom: 8px;
+      min-height: 20px;
+    }
+
+    .live {
+      color: #9fffc3;
+      font-weight: 600;
+    }
+
+    .interim {
+      color: #9fb8cb;
+      font-style: italic;
+    }
+
     .feed {
-      max-height: min(23vh, 210px); overflow: auto; padding: 8px; border-radius: 10px;
-      background: rgba(8, 20, 33, 0.7); border: 1px solid rgba(130, 179, 211, 0.2); font-size: 14px;
+      max-height: min(23vh, 210px);
+      overflow: auto;
+      padding: 8px;
+      border-radius: 10px;
+      background: rgba(8, 20, 33, 0.7);
+      border: 1px solid rgba(130, 179, 211, 0.2);
+      font-size: 14px;
     }
+
     @media (max-width: 700px) {
-      .panel { top: 10px; width: calc(100vw - 14px); padding: 10px; }
-      .title h1 { font-size: 16px; }
-      .feed { max-height: min(22vh, 170px); }
+      .panel {
+        top: 10px;
+        width: calc(100vw - 14px);
+        padding: 10px;
+      }
+
+      .title h1 {
+        font-size: 16px;
+      }
+
+      .feed {
+        max-height: min(22vh, 170px);
+      }
     }
-    .line { margin: 7px 0; line-height: 1.45; }
-    .you { color: #9cc8ff; }
-    .ai { color: #9ef1cc; }
+
+    .line {
+      margin: 7px 0;
+      line-height: 1.45;
+    }
+
+    .you {
+      color: #9cc8ff;
+    }
+
+    .ai {
+      color: #9ef1cc;
+    }
+
     #subtitle-overlay {
-      position: fixed; z-index: 30; left: 50%; bottom: 22px; transform: translateX(-50%);
-      width: min(90vw, 860px); text-align: center; font-size: clamp(16px, 2.2vw, 24px);
-      color: #ebf4ff; text-shadow: 0 2px 8px rgba(0, 0, 0, 0.9);
-      background: rgba(6, 16, 28, 0.55); border-radius: 10px; padding: 8px 10px;
+      position: fixed;
+      z-index: 30;
+      left: 50%;
+      bottom: 22px;
+      transform: translateX(-50%);
+      width: min(90vw, 860px);
+      text-align: center;
+      font-size: clamp(16px, 2.2vw, 24px);
+      color: #ebf4ff;
+      text-shadow: 0 2px 8px rgba(0, 0, 0, 0.9);
+      background: rgba(6, 16, 28, 0.55);
+      border-radius: 10px;
+      padding: 8px 10px;
     }
+
     #user-live-overlay {
-      position: fixed; z-index: 31; left: 50%; top: 18px; transform: translateX(-50%);
-      width: min(92vw, 980px); text-align: center; font-size: clamp(14px, 1.8vw, 20px);
-      color: #9cc8ff; text-shadow: 0 2px 8px rgba(0, 0, 0, 0.9); min-height: 24px;
-      background: rgba(7, 26, 41, 0.62); border-radius: 10px; padding: 8px 10px;
+      position: fixed;
+      z-index: 31;
+      left: 50%;
+      top: 18px;
+      transform: translateX(-50%);
+      width: min(92vw, 980px);
+      text-align: center;
+      font-size: clamp(14px, 1.8vw, 20px);
+      color: #9cc8ff;
+      text-shadow: 0 2px 8px rgba(0, 0, 0, 0.9);
+      min-height: 24px;
+      background: rgba(7, 26, 41, 0.62);
+      border-radius: 10px;
+      padding: 8px 10px;
     }
+
     #loader {
-      position: fixed; inset: 0; z-index: 40; background: #070d14; display: flex; flex-direction: column; align-items: center; justify-content: center;
+      position: fixed;
+      inset: 0;
+      z-index: 40;
+      background: #070d14;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
     }
-    #loader p { color: #9ec8e7; font-weight: 600; font-size: 18px; margin-bottom: 15px; }
+
+    #loader p {
+      color: #9ec8e7;
+      font-weight: 600;
+      font-size: 18px;
+      margin-bottom: 15px;
+    }
+
     .progress-track {
-      width: 280px; height: 12px; background: rgba(255, 255, 255, 0.1); border-radius: 6px; overflow: hidden;
+      width: 280px;
+      height: 12px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 6px;
+      overflow: hidden;
     }
+
     #load-progress {
-      width: 0%; height: 100%; background: #65c8ff; transition: width 0.2s ease-out;
+      width: 0%;
+      height: 100%;
+      background: #65c8ff;
+      transition: width 0.2s ease-out;
     }
+
     @keyframes pulse {
-      0% { opacity: 0.6; }
-      100% { opacity: 1; }
+      0% {
+        opacity: 0.6;
+      }
+
+      100% {
+        opacity: 1;
+      }
     }
+
     #vr-btn {
-      position: fixed; right: 16px; bottom: 16px; z-index: 20; border: 1px solid rgba(130, 185, 219, 0.3);
-      background: rgba(8, 26, 44, 0.8); color: #b8dbf5; border-radius: 999px; padding: 10px 16px;
+      position: fixed;
+      right: 16px;
+      bottom: 16px;
+      z-index: 20;
+      border: 1px solid rgba(130, 185, 219, 0.3);
+      background: rgba(8, 26, 44, 0.8);
+      color: #b8dbf5;
+      border-radius: 999px;
+      padding: 10px 16px;
     }
+
     #mic-gate {
-      position: fixed; inset: 0; z-index: 50; display: none; align-items: center; justify-content: center;
+      position: fixed;
+      inset: 0;
+      z-index: 50;
+      display: none;
+      align-items: center;
+      justify-content: center;
       background: rgba(3, 8, 14, 0.84);
     }
+
     #mic-gate .card {
-      width: min(90vw, 520px); border-radius: 14px; padding: 18px;
-      background: rgba(10, 24, 38, 0.96); border: 1px solid rgba(126, 180, 214, 0.45); text-align: center;
+      width: min(90vw, 520px);
+      border-radius: 14px;
+      padding: 18px;
+      background: rgba(10, 24, 38, 0.96);
+      border: 1px solid rgba(126, 180, 214, 0.45);
+      text-align: center;
     }
-    #mic-gate h3 { color: #a8d8ff; margin-bottom: 10px; }
-    #mic-gate p { color: #c7ddf0; font-size: 14px; margin-bottom: 14px; }
+
+    #mic-gate h3 {
+      color: #a8d8ff;
+      margin-bottom: 10px;
+    }
+
+    #mic-gate p {
+      color: #c7ddf0;
+      font-size: 14px;
+      margin-bottom: 14px;
+    }
+
     #mic-gate button {
-      border: none; border-radius: 9px; padding: 10px 14px; cursor: pointer; font-weight: 700;
-      background: #65c8ff; color: #03243d;
+      border: none;
+      border-radius: 9px;
+      padding: 10px 14px;
+      cursor: pointer;
+      font-weight: 700;
+      background: #65c8ff;
+      color: #03243d;
     }
   </style>
   <script type="importmap">
@@ -99,10 +299,13 @@
   }
   </script>
 </head>
+
 <body>
   <div id="loader">
     <p id="load-text">Loading interview room... 0%</p>
-    <div class="progress-track"><div id="load-progress"></div></div>
+    <div class="progress-track">
+      <div id="load-progress"></div>
+    </div>
   </div>
 
   <div class="panel">
@@ -123,7 +326,7 @@
     <div id="feed" class="feed"></div>
   </div>
 
-  <button id="vr-btn" disabled>Enter VR</button>
+  <button id="vr-btn">Enter VR</button>
   <div id="user-live-overlay"></div>
   <div id="subtitle-overlay"></div>
 
@@ -132,8 +335,7 @@
     import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
     import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
     import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-    import { XRControllerModelFactory } from 'three/addons/webxr/XRControllerModelFactory.js';
-    
+
     window.addEventListener("error", (e) => {
       const pText = document.getElementById("load-text");
       if (pText) pText.textContent = `JS Error: ${e.message} at ${e.filename}:${e.lineno}`;
@@ -171,9 +373,15 @@
     let interviewActive = false;
     let isAIResponding = false;
     let isAudioPlaying = false;
-    
+
     let recognition = null;
     let isListening = false;
+
+    // ===== GYROSCOPE VR MODE =====
+    let vrModeActive = false;
+    let deviceOrientationData = { alpha: 0, beta: 0, gamma: 0 };
+    let initialOrientation = null; // Store the orientation when VR mode starts
+    let savedCameraState = null;   // Save camera state before VR mode
 
     const history = [];
     const INTERVIEWER = {
@@ -302,7 +510,7 @@ Rules:
         navigator.serviceWorker.addEventListener("controllerchange", () => {
           window.location.reload();
         });
-      } catch (_) {}
+      } catch (_) { }
     }
 
     function initSpeechRecognition() {
@@ -311,17 +519,17 @@ Rules:
         setStatus("Speech Recognition not supported in this browser.");
         return;
       }
-      
+
       recognition = new SpeechRecognition();
       recognition.continuous = false;
       recognition.interimResults = true;
       recognition.lang = 'en-US';
-      
+
       recognition.onstart = () => {
         isListening = true;
         setStatus("Listening...", true);
       };
-      
+
       recognition.onresult = (event) => {
         // Hard block: discard ANY speech while AI is responding or audio playing
         if (isAIResponding || isAudioPlaying) {
@@ -330,7 +538,7 @@ Rules:
         }
         let interimTranscript = '';
         let finalTranscript = '';
-        
+
         for (let i = event.resultIndex; i < event.results.length; ++i) {
           if (event.results[i].isFinal) {
             finalTranscript += event.results[i][0].transcript;
@@ -338,22 +546,22 @@ Rules:
             interimTranscript += event.results[i][0].transcript;
           }
         }
-        
+
         ui.transcript.textContent = interimTranscript;
-        
+
         if (finalTranscript.trim() !== "") {
           ui.transcript.textContent = "";
           handleCandidateAnswer(finalTranscript.trim());
         }
       };
-      
+
       recognition.onerror = (event) => {
         isListening = false;
         if (event.error !== 'no-speech') {
           console.error("Speech error: " + event.error);
         }
       };
-      
+
       recognition.onend = () => {
         isListening = false;
         // Auto-restart listening if it stopped and we're not answering yet
@@ -365,13 +573,13 @@ Rules:
 
     function startListening() {
       if (recognition && !isListening && interviewActive && !isAIResponding && !isAudioPlaying) {
-        try { recognition.start(); } catch (e) {}
+        try { recognition.start(); } catch (e) { }
       }
     }
 
     function stopListening() {
       if (recognition && isListening) {
-        try { recognition.stop(); } catch (e) {}
+        try { recognition.stop(); } catch (e) { }
       }
     }
 
@@ -410,35 +618,35 @@ Rules:
       // Auto-enter VR mode
       setTimeout(() => {
         const vrBtn = document.getElementById("vr-btn");
-        if (vrBtn && !vrBtn.disabled && vrBtn.textContent !== "Exit VR") {
+        if (vrBtn && vrBtn.textContent !== "Exit VR") {
           vrBtn.click();
         }
       }, 500);
 
       setStatus("Interview started. Connecting to panel...");
-      
+
       try {
         const res = await fetch(`${STUDENT_API_BASE}/mock-interview/start`, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "Authorization": `Bearer ${authToken}`
-            },
-            body: JSON.stringify({ resumeSource: "profile" })
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${authToken}`
+          },
+          body: JSON.stringify({ resumeSource: "profile" })
         });
-        
+
         if (!res.ok) {
-            let detail = "";
-            try {
-              const errData = await res.json();
-              detail = errData?.message || JSON.stringify(errData);
-            } catch (_) {}
-            throw new Error(`API HTTP ${res.status}${detail ? ` - ${detail}` : ""}`);
+          let detail = "";
+          try {
+            const errData = await res.json();
+            detail = errData?.message || JSON.stringify(errData);
+          } catch (_) { }
+          throw new Error(`API HTTP ${res.status}${detail ? ` - ${detail}` : ""}`);
         }
-        
+
         const json = await res.json();
         if (!json.success) throw new Error(json.message || "Failed to start interview");
-        
+
         backendSessionId = json.data?.sessionId;
         const opening = json.data?.openingMessage;
 
@@ -467,23 +675,23 @@ Rules:
       stopListening();
       ui.startBtn.disabled = false;
       ui.endBtn.disabled = true;
-      
+
       if (backendSessionId) {
-          try {
-              setStatus("Ending interview and generating feedback...");
-              await fetch(`${STUDENT_API_BASE}/mock-interview/end`, {
-                  method: "POST",
-                  headers: {
-                      "Content-Type": "application/json",
-                      "Authorization": `Bearer ${authToken}`
-                  },
-                  body: JSON.stringify({ sessionId: backendSessionId })
-              });
-          } catch(e) {
-              console.error(e);
-          }
+        try {
+          setStatus("Ending interview and generating feedback...");
+          await fetch(`${STUDENT_API_BASE}/mock-interview/end`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${authToken}`
+            },
+            body: JSON.stringify({ sessionId: backendSessionId })
+          });
+        } catch (e) {
+          console.error(e);
+        }
       }
-      
+
       setStatus("Interview ended.");
       ui.transcript.textContent = "";
       ui.subtitle.textContent = "";
@@ -494,12 +702,12 @@ Rules:
 
 
     // Flutter Native Hook
-    window.receiveUserAnswer = async function(text) {
+    window.receiveUserAnswer = async function (text) {
       if (!text || !interviewActive || isAIResponding) return;
-      
+
       pushFeed("you", text);
       ui.userLive.textContent = `${getCandidateName()}: ${text}`;
-      
+
       // Stop flutter's internal logic, just use AI
       await handleCandidateAnswer(text);
     };
@@ -519,7 +727,7 @@ Rules:
 
       isAIResponding = false;
       ui.subtitle.textContent = "";
-      
+
       // AI done speaking, resume listening
       startListening();
     }
@@ -544,13 +752,13 @@ Rules:
           try {
             const errData = await res.json();
             detail = errData?.message || JSON.stringify(errData);
-          } catch (_) {}
+          } catch (_) { }
           throw new Error(`API HTTP ${res.status}${detail ? ` - ${detail}` : ""}`);
         }
-        
+
         const json = await res.json();
         if (!json.success) throw new Error(json.message || "Failed to get AI response");
-        
+
         const returnText = json.data?.message || "";
         history.push({ role: "user", content: userMessage });
         history.push({ role: "assistant", content: returnText });
@@ -666,6 +874,8 @@ Rules:
 
 
 
+    // ===== 3D SCENE (NO WebXR stereo — single viewport only) =====
+
     function initScene() {
       scene = new THREE.Scene();
       scene.background = new THREE.Color(0xcbd6e3);
@@ -673,6 +883,7 @@ Rules:
       camera = new THREE.PerspectiveCamera(60, innerWidth / innerHeight, 0.01, 500);
       camera.position.copy(seatPos);
 
+      // NO renderer.xr.enabled — we do NOT want stereo split-screen
       renderer = new THREE.WebGLRenderer({ antialias: true });
       renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
       renderer.setSize(innerWidth, innerHeight);
@@ -681,7 +892,7 @@ Rules:
       renderer.toneMappingExposure = 1.15;
       renderer.shadowMap.enabled = true;
       renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-      renderer.xr.enabled = true;
+      // INTENTIONALLY NOT setting renderer.xr.enabled = true
       document.body.appendChild(renderer.domElement);
 
       controls = new OrbitControls(camera, renderer.domElement);
@@ -705,7 +916,7 @@ Rules:
       scene.add(fill);
 
       loadModel();
-      setupVR();
+      setupGyroVR(); // Gyroscope-based VR (single viewport, no split)
 
       window.addEventListener("resize", () => {
         camera.aspect = innerWidth / innerHeight;
@@ -713,8 +924,13 @@ Rules:
         renderer.setSize(innerWidth, innerHeight);
       });
 
+      // Single-viewport render loop
       renderer.setAnimationLoop(() => {
-        controls.update();
+        if (vrModeActive) {
+          applyGyroscopeToCamera();
+        } else {
+          controls.update();
+        }
         renderer.render(scene, camera);
       });
     }
@@ -765,96 +981,209 @@ Rules:
             if (pText) pText.textContent = `Loading interview room... ${mb} MB`;
           }
         },
-        (error) => { 
-          console.error(error); 
+        (error) => {
+          console.error(error);
           const pText = document.getElementById("load-text");
           if (pText) pText.textContent = "Error loading 3D model.";
         }
       );
     }
 
-    function setupVR() {
+
+    // ===== GYROSCOPE VR (Single centered view, head-tracking via phone sensors) =====
+
+    function setupGyroVR() {
       const vrBtn = document.getElementById("vr-btn");
-      if (!("xr" in navigator)) {
-        vrBtn.textContent = "WebXR N/A";
-        return;
-      }
-      navigator.xr.isSessionSupported("immersive-vr").then((supported) => {
-        if (!supported) {
-          vrBtn.textContent = "VR Unsupported";
-          return;
+
+      vrBtn.addEventListener("click", () => {
+        if (!vrModeActive) {
+          enterGyroVR();
+        } else {
+          exitGyroVR();
         }
-        vrBtn.disabled = false;
-        vrBtn.addEventListener("click", async () => {
-          if (!renderer.xr.isPresenting) {
-            const session = await navigator.xr.requestSession("immersive-vr", {
-              optionalFeatures: ["local-floor", "bounded-floor", "hand-tracking"]
-            });
-            renderer.xr.setSession(session);
-            vrBtn.textContent = "Exit VR";
-            session.addEventListener("end", () => { vrBtn.textContent = "Enter VR"; });
-          } else {
-            renderer.xr.getSession().end();
-          }
-        });
-
-        renderer.xr.addEventListener("sessionstart", () => {
-          const baseRef = renderer.xr.getReferenceSpace();
-          if (!baseRef) return;
-          const vrX = seatPos.x * 0.4;
-          const vrY = seatPos.y - 0.2;
-          const vrZ = seatPos.z;
-          const transform = new XRRigidTransform(
-            { x: -vrX, y: vrY, z: -vrZ, w: 1 },
-            { x: 0, y: 0, z: 0, w: 1 }
-          );
-          renderer.xr.setReferenceSpace(baseRef.getOffsetReferenceSpace(transform));
-        });
-
-        setupControllers();
       });
     }
 
-    function setupControllers() {
-      const factory = new XRControllerModelFactory();
-      for (let i = 0; i < 2; i += 1) {
-        const controller = renderer.xr.getController(i);
-        scene.add(controller);
+    async function enterGyroVR() {
+      const vrBtn = document.getElementById("vr-btn");
+      vrModeActive = true;
+      vrBtn.textContent = "Exit VR";
 
-        const laserGeom = new THREE.BufferGeometry().setFromPoints([
-          new THREE.Vector3(0, 0, 0),
-          new THREE.Vector3(0, 0, -3)
-        ]);
-        const laser = new THREE.Line(laserGeom, new THREE.LineBasicMaterial({ color: 0x64d7ff }));
-        controller.add(laser);
+      // Save current camera state
+      savedCameraState = {
+        position: camera.position.clone(),
+        quaternion: camera.quaternion.clone(),
+        fov: camera.fov
+      };
 
-        const grip = renderer.xr.getControllerGrip(i);
-        grip.add(factory.createControllerModel(grip));
-        scene.add(grip);
+      // Disable OrbitControls
+      controls.enabled = false;
 
-        controller.addEventListener("selectstart", () => onTeleport(controller));
+      // Request fullscreen for immersive experience
+      try {
+        const el = document.documentElement;
+        if (el.requestFullscreen) {
+          await el.requestFullscreen();
+        } else if (el.webkitRequestFullscreen) {
+          await el.webkitRequestFullscreen();
+        }
+      } catch (e) {
+        console.log("Fullscreen not available:", e);
       }
+
+      // Try to lock to landscape
+      try {
+        if (screen.orientation && screen.orientation.lock) {
+          await screen.orientation.lock("landscape");
+        }
+      } catch (e) {
+        console.log("Orientation lock not available:", e);
+      }
+
+      // Widen FOV slightly for more immersive feel
+      camera.fov = 80;
+      camera.updateProjectionMatrix();
+
+      // Reset initial orientation (will calibrate on first reading)
+      initialOrientation = null;
+
+      // Request device orientation permission (iOS 13+ requires this)
+      if (typeof DeviceOrientationEvent !== 'undefined' &&
+        typeof DeviceOrientationEvent.requestPermission === 'function') {
+        try {
+          const permission = await DeviceOrientationEvent.requestPermission();
+          if (permission !== 'granted') {
+            console.warn("Device orientation permission denied");
+          }
+        } catch (e) {
+          console.warn("Could not request orientation permission:", e);
+        }
+      }
+
+      // Start listening to device orientation
+      window.addEventListener("deviceorientation", onDeviceOrientation, true);
+
+      // Resize for fullscreen
+      setTimeout(() => {
+        camera.aspect = innerWidth / innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(innerWidth, innerHeight);
+      }, 300);
     }
 
-    function onTeleport(controller) {
-      const tempMatrix = new THREE.Matrix4();
-      tempMatrix.identity().extractRotation(controller.matrixWorld);
-      const raycaster = new THREE.Raycaster();
-      raycaster.ray.origin.setFromMatrixPosition(controller.matrixWorld);
-      raycaster.ray.direction.set(0, 0, -1).applyMatrix4(tempMatrix);
+    function exitGyroVR() {
+      const vrBtn = document.getElementById("vr-btn");
+      vrModeActive = false;
+      vrBtn.textContent = "Enter VR";
 
-      const hits = raycaster.intersectObjects(scene.children, true);
-      if (!hits.length) return;
-      const point = hits[0].point;
-      const ref = renderer.xr.getReferenceSpace();
-      if (!ref) return;
+      // Stop listening to device orientation
+      window.removeEventListener("deviceorientation", onDeviceOrientation, true);
 
-      const transform = new XRRigidTransform(
-        { x: -point.x, y: 0, z: -point.z, w: 1 },
-        { x: 0, y: 0, z: 0, w: 1 }
+      // Restore camera state
+      if (savedCameraState) {
+        camera.position.copy(savedCameraState.position);
+        camera.quaternion.copy(savedCameraState.quaternion);
+        camera.fov = savedCameraState.fov;
+        camera.updateProjectionMatrix();
+        savedCameraState = null;
+      }
+
+      // Re-enable OrbitControls
+      controls.enabled = true;
+      controls.update();
+
+      // Exit fullscreen
+      try {
+        if (document.exitFullscreen) {
+          document.exitFullscreen();
+        } else if (document.webkitExitFullscreen) {
+          document.webkitExitFullscreen();
+        }
+      } catch (e) { }
+
+      // Unlock orientation
+      try {
+        if (screen.orientation && screen.orientation.unlock) {
+          screen.orientation.unlock();
+        }
+      } catch (e) { }
+
+      // Resize back
+      setTimeout(() => {
+        camera.aspect = innerWidth / innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(innerWidth, innerHeight);
+      }, 300);
+    }
+
+    function onDeviceOrientation(event) {
+      if (!vrModeActive) return;
+
+      const alpha = event.alpha || 0; // compass direction (0-360)
+      const beta = event.beta || 0;   // front-back tilt (-180 to 180)
+      const gamma = event.gamma || 0; // left-right tilt (-90 to 90)
+
+      // Calibrate: save the first reading as "forward"
+      if (initialOrientation === null) {
+        initialOrientation = { alpha, beta, gamma };
+      }
+
+      deviceOrientationData = { alpha, beta, gamma };
+    }
+
+    function applyGyroscopeToCamera() {
+      if (!initialOrientation) return;
+
+      const { alpha, beta, gamma } = deviceOrientationData;
+
+      // Convert degrees to radians
+      const degToRad = Math.PI / 180;
+
+      // Calculate relative rotation from initial orientation
+      let deltaAlpha = (alpha - initialOrientation.alpha) * degToRad; // yaw (left-right)
+      let deltaBeta = (beta - initialOrientation.beta) * degToRad;   // pitch (up-down)
+      let deltaGamma = (gamma - initialOrientation.gamma) * degToRad; // roll
+
+      // Clamp pitch to avoid flipping
+      deltaBeta = Math.max(-Math.PI / 3, Math.min(Math.PI / 3, deltaBeta));
+
+      // Build quaternion: 
+      // Phone held in landscape for VR headset, so we remap axes:
+      // Phone's alpha (yaw/compass) -> scene yaw (Y axis rotation)
+      // Phone's beta (front-back tilt) -> scene pitch (X axis rotation)
+      // We ignore roll (gamma) for comfort
+
+      const euler = new THREE.Euler(
+        -deltaBeta,   // pitch: tilting phone forward/back = look up/down
+        -deltaAlpha,  // yaw: rotating phone left/right = look left/right
+        0,            // no roll
+        'YXZ'         // yaw first, then pitch
       );
-      renderer.xr.setReferenceSpace(ref.getOffsetReferenceSpace(transform));
+
+      // Apply rotation on top of the original camera look direction
+      const baseDirection = new THREE.Vector3().subVectors(lookAt, seatPos).normalize();
+      const baseQuaternion = new THREE.Quaternion().setFromUnitVectors(
+        new THREE.Vector3(0, 0, -1),
+        baseDirection
+      );
+
+      const gyroQuaternion = new THREE.Quaternion().setFromEuler(euler);
+      camera.quaternion.copy(baseQuaternion).multiply(gyroQuaternion);
     }
+
+    // Handle fullscreen exit (user presses back button)
+    document.addEventListener("fullscreenchange", () => {
+      if (!document.fullscreenElement && vrModeActive) {
+        exitGyroVR();
+      }
+    });
+    document.addEventListener("webkitfullscreenchange", () => {
+      if (!document.webkitFullscreenElement && vrModeActive) {
+        exitGyroVR();
+      }
+    });
+
   </script>
 </body>
+
 </html>

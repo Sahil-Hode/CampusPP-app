@@ -1,0 +1,40 @@
+# CAMPUS++ APP - COMPREHENSIVE FEATURE & PAGE SPECIFICATION
+
+## PAGES (24 Total)
+1. **Landing Page** (`landing_page.dart`) - The introductory splash and overview screen.
+2. **Login Page** (`login_page.dart`) - Standard user authentication.
+3. **GitHub OAuth Page** (`github_oauth_page.dart`) - Secondary authentication and GitHub account linking.
+4. **Dashboard Page** (`dashboard_page.dart`) - The central hub summarizing student analytics, progress, and quick actions.
+5. **Profile Page** (`profile_page.dart`) - Complete student details, metadata, and active-resume repository.
+6. **Performance Analysis Page** (`performance_analysis_page.dart`) - Detailed tables and charts for marks, attendance, and assignment metrics.
+7. **Predictive Dashboard Page** (`predictive_dashboard_page.dart`) - Advanced AI metrics showing risk breakdown, trend analysis, academic stability, and "what-if" impact simulation.
+8. **Score Breakdown Page** (`score_breakdown_page.dart`) - Specialized granular view for test score breakdowns.
+9. **Interventions Page** (`interventions_page.dart`) - Urgent or suggested AI-recommended actions to mitigate academic risk factors.
+10. **AI Analysis Page** (`ai_analysis_page.dart`) - Generalized contextual performance review.
+11. **AI Council Page** (`ai_council_page.dart`) - Highly advanced feature summarizing decision-making logic and guidance from the AI engine.
+12. **Learning Path Page** (`learning_path_page.dart`) - List and tracking overview of personalized curriculum paths.
+13. **Learning Path Detail Page** (`learning_path_detail_page.dart`) - Deep dive into an individual learning path, with module completion tracking.
+14. **Quiz Page** (`quiz_page.dart`) - Interface for taking AI-generated quizzes related to learning paths.
+15. **Project Detail Page** (`project_detail_page.dart`) - Detailed repository and project status view.
+16. **Code Runner Page** (`code_runner_page.dart`) - Direct, integrated IDE for live code execution and testing inside the app.
+17. **Resume Upload Page** (`resume_upload_page.dart`) - Dedicated form for document upload (PDF/DOCX).
+18. **Resume Analysis Result Page** (`resume_analysis_result_page.dart`) - ATS scoring, keyword detection, and formatting feedback from uploaded resumes.
+19. **Mock Interview Page** (`mock_interview_page.dart`) - Core Voice AI Mock Interview dashboard tying directly into the student's active profile resume.
+20. **VR Interview Page** (`vr_interview_page.dart`) - Fully immersive Virtual Reality setup for realistic interview scenario training.
+21. **3D Mentor Page** (`three_d_mentor_page.dart`) - Conversational 3D model interface (Deepak) featuring STT, live audio dictation, dynamic lighting, and context-awareness.
+22. **AR Viewer Page** (`ar_viewer_page.dart`) - Main Augmented Reality viewer for 3D educational models.
+23. **AR Model Detail Page** (`ar_model_detail_page.dart`) - Detailed breakdown and control schema for active AR projections.
+24. **Chatbot Page** (`chatbot_page.dart`) - Generalized, non-vocal AI interaction tool.
+
+
+## CORE FEATURES & BACKEND INTEGRATIONS
+1. **Advanced Predictive Analytics Engine**: Real-time generation of student stability scores, predictive risk alerts, and dynamic success simulations based on real-time data flow.
+2. **Context-Aware 3D AI Mentorship Engine**: A 3D avatar that accepts microphone voice commands in multiple regional languages (English, Hindi, Marathi, Rajasthani), parses the audio against the user's live academic standing, and speaks back using realtime Text-to-Speech lip-sync animation. 
+3. **Immersive Sandbox Generation**: Both AR parsing and VR immersive environment loading frameworks to embed 3D GLB/GLTF assets seamlessly inside Flutter.
+4. **WebSocket Streaming Infrastructure**: Heavy reliance on live `Socket.io` connection buffering for streaming instant Mock Interview TTS/STT blobs back and forth without HTTP polling delays.
+5. **Real-time Code Runner Environment**: An isolated sandbox where students can actually write, compile, and execute programmatic syntax (languages like Python, Dart, etc.) on the fly.
+6. **Intelligent Resume Analyzer**: Uses LLMs to rip text from user documents (PDF/DOC), rate format structure, highlight strengths, and identify missing industry-standard skills/keywords.
+7. **Automated AI Learning Path Architect**: Takes a broad topic command from the student and dynamically spins up a customized, chapter-by-chapter curriculum with tracked progress parameters.
+8. **Dynamic Quiz Generation Engine**: Procedurally generates context-relevant quizzes tied back directly to learning path checkpoints to cement student understanding before allowing progress.
+9. **GitHub OAuth & Project Syncing**: Connects to version control to allow student profiles to reflect real-world repository data.
+10. **Glassmorphic UI Design System**: Application-wide premium design standard featuring Frosted Glass panels (`BackdropFilter`), Google Fonts (`Poppins`), complex multi-stop gradients, and fluid micro-animations on interactive components.

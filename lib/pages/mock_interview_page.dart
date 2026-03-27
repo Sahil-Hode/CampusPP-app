@@ -1202,6 +1202,7 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
+              // --- VOICE INTERVIEW CARD ---
               Container(
                 padding: const EdgeInsets.all(24),
                 margin: const EdgeInsets.fromLTRB(20, 28, 20, 16),
@@ -1220,7 +1221,7 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
                       width: 84,
                       height: 84,
                       decoration: BoxDecoration(
-                        color: const Color(0xFFE3F2FD),
+                        color: const Color(0xFFFFF3E0),
                         shape: BoxShape.circle,
                         border: Border.all(color: Colors.black, width: 3),
                         boxShadow: const [
@@ -1232,7 +1233,7 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
                         ],
                       ),
                       child: const Icon(
-                        Icons.analytics_rounded,
+                        Icons.mic_rounded,
                         size: 36,
                         color: Colors.black,
                       ),
