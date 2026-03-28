@@ -1,4 +1,4 @@
-﻿import 'dart:convert';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
@@ -31,7 +31,7 @@ import 'predictive_dashboard_page.dart';
 import 'code_runner_page.dart';
 import 'gamification_page.dart';
 import 'faculty_notes_page.dart';
-
+import 'faculty_resource_page.dart';
 
 import '../models/student_profile_model.dart';
 
@@ -554,7 +554,7 @@ class _DashboardPageState extends State<DashboardPage> {
                             color: Colors.black,
                             borderRadius: BorderRadius.circular(8),
                           ),
-                          child: Text('3', style: GoogleFonts.poppins(fontSize: 10, fontWeight: FontWeight.w800, color: Colors.white)),
+                          child: Text('6', style: GoogleFonts.poppins(fontSize: 10, fontWeight: FontWeight.w800, color: Colors.white)),
                         ),
                       ],
                     ),
@@ -622,6 +622,16 @@ class _DashboardPageState extends State<DashboardPage> {
                           iconBgColor: const Color(0xFF9C27B0),
                           textColor: Colors.black,
                           onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const FacultyNotesPage())),
+                        ),
+                        _buildQuickActionButton(
+                          context,
+                          icon: Icons.source_outlined,
+                          label: 'Resources',
+                          subtitle: 'Study Materials',
+                          color: const Color(0xFFF0F4C3),
+                          iconBgColor: const Color(0xFFCDDC39),
+                          textColor: Colors.black,
+                          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const FacultyResourcePage())),
                         ),
                       ],
                     ),
