@@ -5,7 +5,6 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:open_filex/open_filex.dart';
-import 'package:path_provider/package_provider.dart'; // ignore: avoid_web_libraries_in_flutter (just testing provider) -> wait, it is just path_provider
 import 'package:path_provider/path_provider.dart';
 
 class UpdateService {
