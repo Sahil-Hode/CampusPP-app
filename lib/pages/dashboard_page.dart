@@ -12,6 +12,7 @@ import 'ai_analysis_page.dart';
 import 'resume_upload_page.dart';
 import 'profile_page.dart';
 import 'ai_council_page.dart';
+import '../services/update_service.dart';
 import '../widgets/attendance_card.dart';
 import '../widgets/lms_engagement_card.dart';
 import 'score_breakdown_page.dart';
@@ -21,7 +22,7 @@ import 'learning_path_page.dart';
 import 'interventions_page.dart';
 import 'three_d_mentor_page.dart';
 import '../widgets/quiz_score_card.dart';
-import 'mock_interview_page.dart';
+import 'notes_analyzer_page.dart';
 import '../widgets/quiz_overview_card.dart';
 import '../services/quiz_service.dart';
 import '../models/quiz_model.dart';
@@ -54,6 +55,7 @@ class _DashboardPageState extends State<DashboardPage> {
     _fetchDashboardData();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<NotificationProvider>().fetchUnreadCount();
+      UpdateService.checkForUpdates(context); // Initiates background update check
     });
   }
 
@@ -582,13 +584,13 @@ class _DashboardPageState extends State<DashboardPage> {
                         ),
                         _buildQuickActionButton(
                           context,
-                          icon: Icons.forum_outlined,
-                          label: 'Mock Interview',
-                          subtitle: 'AI Practice',
-                          color: const Color(0xFFFFE566),
-                          iconBgColor: const Color(0xFFFFA726),
+                          icon: Icons.document_scanner_outlined,
+                          label: 'Notes Analyzer',
+                          subtitle: 'Sarvam AI',
+                          color: const Color(0xFFF3E5F5),
+                          iconBgColor: const Color(0xFF9C27B0),
                           textColor: Colors.black,
-                          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const MockInterviewPage())),
+                          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const NotesAnalyzerPage())),
                         ),
 
                         _buildQuickActionButton(
@@ -616,7 +618,7 @@ class _DashboardPageState extends State<DashboardPage> {
                         _buildQuickActionButton(
                           context,
                           icon: Icons.school,
-                          label: 'Faculty Notes',
+                          label: 'Faculty Annotation',
                           subtitle: 'Guidance',
                           color: const Color(0xFFE1BEE7),
                           iconBgColor: const Color(0xFF9C27B0),
@@ -626,7 +628,7 @@ class _DashboardPageState extends State<DashboardPage> {
                         _buildQuickActionButton(
                           context,
                           icon: Icons.source_outlined,
-                          label: 'Resources',
+                          label: 'Faculty Resource',
                           subtitle: 'Study Materials',
                           color: const Color(0xFFF0F4C3),
                           iconBgColor: const Color(0xFFCDDC39),

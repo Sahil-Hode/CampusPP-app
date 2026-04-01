@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../services/student_service.dart';
 import '../models/faculty_annotation_model.dart';
-import '../models/performance_model.dart';
+import '../models/notice_model.dart';
 
 class FacultyNotesPage extends StatefulWidget {
   const FacultyNotesPage({super.key});
@@ -11,61 +12,79 @@ class FacultyNotesPage extends StatefulWidget {
   State<FacultyNotesPage> createState() => _FacultyNotesPageState();
 }
 
-class _FacultyNotesPageState extends State<FacultyNotesPage>
-    with SingleTickerProviderStateMixin {
+class _FacultyNotesPageState extends State<FacultyNotesPage> {
   bool _loading = true;
   List<FacultyAnnotation> _facultyNotes = [];
-  InterventionData? _intervention;
-  late TabController _tabCtrl;
+  List<Notice> _notices = [];
+  int _selectedTab = 0;
+  final PageController _pageCtrl = PageController();
 
-  static const _bg = Color(0xFFF5F0FF);
-  static const _purple = Color(0xFFD4AAFF);
-  static const _green = Color(0xFF40FFA7);
-  static const _yellow = Color(0xFFFFD54F);
-  static const _red = Color(0xFFFF8B94);
+  static const _bg    = Color(0xFFFFFBF0);
+  static const _amber = Color(0xFFFFAB00);
+  static const _mint  = Color(0xFFA8E6CF);
+  static const _coral = Color(0xFFFF8B94);
+  static const _sky   = Color(0xFFB3E5FC);
   static const _black = Colors.black;
+
+  static const _stripes = [
+    Color(0xFFFFAB00),
+    Color(0xFF4DB6AC),
+    Color(0xFFFF8B94),
+    Color(0xFF81C784),
+    Color(0xFF7986CB),
+  ];
 
   @override
   void initState() {
     super.initState();
-    _tabCtrl = TabController(length: 2, vsync: this);
     _loadData();
   }
 
   @override
   void dispose() {
-    _tabCtrl.dispose();
+    _pageCtrl.dispose();
     super.dispose();
   }
 
   Future<void> _loadData() async {
-    setState(() => _loading = true);
-    await Future.wait([_loadFacultyNotes(), _loadIntervention()]);
-    if (mounted) setState(() => _loading = false);
-  }
+    if (mounted) setState(() => _loading = true);
 
-  Future<void> _loadFacultyNotes() async {
-    try {
-      final notes = await StudentService.getFacultyNotes();
-      if (mounted) setState(() => _facultyNotes = notes);
-    } catch (_) {}
-  }
+    List<FacultyAnnotation> fetchedNotes = [];
+    List<Notice> fetchedNotices = [];
 
-  Future<void> _loadIntervention() async {
-    try {
-      final data = await StudentService.getIntervention();
-      if (mounted) setState(() => _intervention = data);
-    } catch (_) {}
+    // Run both requests in PARALLEL — cuts load time in half
+    await Future.wait([
+      StudentService.getFacultyNotes()
+          .then((v) => fetchedNotes = v)
+          .catchError((e) {
+        if (kDebugMode) debugPrint('[FacultyAnnotation] ERROR: $e');
+      }),
+      StudentService.getNotices()
+          .then((v) => fetchedNotices = v)
+          .catchError((e) {
+        if (kDebugMode) debugPrint('[Notices] ERROR: $e');
+      }),
+    ]);
+
+    if (mounted) {
+      setState(() {
+        _facultyNotes = fetchedNotes;
+        _notices      = fetchedNotices;
+        _loading      = false;
+      });
+    }
   }
 
   String _timeAgo(DateTime date) {
     final diff = DateTime.now().difference(date);
-    if (diff.inDays > 1) return '${diff.inDays}d ago';
-    if (diff.inDays == 1) return '1d ago';
-    if (diff.inHours > 0) return '${diff.inHours}h ago';
+    if (diff.inDays > 1)    return '${diff.inDays}d ago';
+    if (diff.inDays == 1)   return '1d ago';
+    if (diff.inHours > 0)   return '${diff.inHours}h ago';
     if (diff.inMinutes > 0) return '${diff.inMinutes}m ago';
     return 'Just now';
   }
+
+  // ── Build ──────────────────────────────────────────────────────────────────
 
   @override
   Widget build(BuildContext context) {
@@ -75,17 +94,22 @@ class _FacultyNotesPageState extends State<FacultyNotesPage>
         child: Column(
           children: [
             _buildHeader(),
-            _buildTabBar(),
+            const SizedBox(height: 10),
+            _buildSegmentedTab(),
+            const SizedBox(height: 4),
             Expanded(
               child: _loading
                   ? const Center(
-                      child: CircularProgressIndicator(
-                          color: _black, strokeWidth: 2.5))
-                  : TabBarView(
-                      controller: _tabCtrl,
+                      child: CircularProgressIndicator(color: _amber, strokeWidth: 2.5))
+                  : PageView(
+                      controller: _pageCtrl,
+                      physics: const BouncingScrollPhysics(),
+                      onPageChanged: (page) {
+                        setState(() => _selectedTab = page);
+                      },
                       children: [
-                        _buildNotesTab(),
-                        _buildInterventionTab(),
+                        _buildAnnotationsTab(),
+                        _buildNoticeTab(),
                       ],
                     ),
             ),
@@ -95,46 +119,40 @@ class _FacultyNotesPageState extends State<FacultyNotesPage>
     );
   }
 
+  // ── Header ─────────────────────────────────────────────────────────────────
+
   Widget _buildHeader() {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+      padding: const EdgeInsets.fromLTRB(14, 10, 14, 0),
       child: Row(
         children: [
           GestureDetector(
             onTap: () => Navigator.pop(context),
             child: Container(
-              padding: const EdgeInsets.all(10),
+              padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: _black, width: 2),
-                boxShadow: const [
-                  BoxShadow(color: _black, offset: Offset(3, 3)),
-                ],
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: _black, width: 1.8),
+                boxShadow: const [BoxShadow(color: _black, offset: Offset(2, 2))],
               ),
-              child: const Icon(Icons.arrow_back, size: 20),
+              child: const Icon(Icons.arrow_back, size: 18),
             ),
           ),
-          const SizedBox(width: 14),
+          const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'FACULTY NOTES',
+                  'FACULTY ANNOTATION',
                   style: GoogleFonts.poppins(
-                    fontWeight: FontWeight.w900,
-                    fontSize: 20,
-                    letterSpacing: 1,
-                  ),
+                    fontWeight: FontWeight.w900, fontSize: 17, letterSpacing: 0.5),
                 ),
                 Text(
-                  'Messages & guidance from your faculty',
+                  'Guidance & notices from your faculty',
                   style: GoogleFonts.poppins(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
-                    color: Colors.black54,
-                  ),
+                    fontSize: 10.5, fontWeight: FontWeight.w500, color: Colors.black45),
                 ),
               ],
             ),
@@ -142,16 +160,14 @@ class _FacultyNotesPageState extends State<FacultyNotesPage>
           GestureDetector(
             onTap: _loadData,
             child: Container(
-              padding: const EdgeInsets.all(10),
+              padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: _green,
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: _black, width: 2),
-                boxShadow: const [
-                  BoxShadow(color: _black, offset: Offset(3, 3)),
-                ],
+                color: _mint,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: _black, width: 1.8),
+                boxShadow: const [BoxShadow(color: _black, offset: Offset(2, 2))],
               ),
-              child: const Icon(Icons.refresh, size: 20),
+              child: const Icon(Icons.refresh, size: 18),
             ),
           ),
         ],
@@ -159,51 +175,231 @@ class _FacultyNotesPageState extends State<FacultyNotesPage>
     );
   }
 
-  Widget _buildTabBar() {
+  // ── Segmented Tab ──────────────────────────────────────────────────────────
+
+  Widget _buildSegmentedTab() {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
+      padding: const EdgeInsets.symmetric(horizontal: 14),
       child: Container(
+        height: 48,
+        padding: const EdgeInsets.all(4),
+        decoration: BoxDecoration(
+          color: const Color(0xFFEEEADD),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: _black, width: 2),
+        ),
+        child: Stack(
+          children: [
+            // ── Sliding highlight pill ───────────────────────────────────
+            AnimatedAlign(
+              duration: const Duration(milliseconds: 280),
+              curve: Curves.easeInOut,
+              alignment: _selectedTab == 0
+                  ? Alignment.centerLeft
+                  : Alignment.centerRight,
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 280),
+                curve: Curves.easeInOut,
+                width: (MediaQuery.of(context).size.width - 28 - 8 - 8) / 2,
+                decoration: BoxDecoration(
+                  color: _selectedTab == 0 ? _amber : _sky,
+                  borderRadius: BorderRadius.circular(11),
+                  border: Border.all(color: _black, width: 1.5),
+                ),
+              ),
+            ),
+
+            // ── Tab labels on top ────────────────────────────────────────
+            Row(
+              children: [
+                _tabLabel(index: 0, icon: Icons.comment_bank_outlined,
+                    label: 'Annotation',
+                    badge: _facultyNotes.isNotEmpty ? '${_facultyNotes.length}' : null),
+                _tabLabel(index: 1, icon: Icons.campaign_outlined,
+                    label: 'Notice'),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _tabLabel({
+    required int index,
+    required IconData icon,
+    required String label,
+    String? badge,
+  }) {
+    final isActive = _selectedTab == index;
+    return Expanded(
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () {
+          _pageCtrl.animateToPage(
+            index,
+            duration: const Duration(milliseconds: 320),
+            curve: Curves.easeInOut,
+          );
+        },
+        child: SizedBox.expand(
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, size: 15,
+                  color: isActive ? _black : Colors.black38),
+              const SizedBox(width: 5),
+              Text(
+                label,
+                style: GoogleFonts.poppins(
+                  fontWeight: isActive ? FontWeight.w800 : FontWeight.w600,
+                  fontSize: 12.5,
+                  color: isActive ? _black : Colors.black38,
+                ),
+              ),
+              if (badge != null) ...[
+                const SizedBox(width: 5),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                  decoration: BoxDecoration(
+                    color: isActive ? _black : Colors.black26,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(badge,
+                      style: GoogleFonts.poppins(
+                          fontSize: 8,
+                          fontWeight: FontWeight.w900,
+                          color: Colors.white)),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ── Annotation Tab ─────────────────────────────────────────────────────────
+
+  Widget _buildAnnotationsTab() {
+    if (_facultyNotes.isEmpty) {
+      return _emptyState(
+        icon: Icons.comment_bank_outlined,
+        iconColor: _amber,
+        title: 'No Annotations Yet',
+        subtitle: 'When your faculty adds annotations,\nthey will appear here.',
+      );
+    }
+    return RefreshIndicator(
+      onRefresh: _loadData,
+      color: _amber,
+      child: ListView.builder(
+        padding: const EdgeInsets.fromLTRB(14, 10, 14, 24),
+        itemCount: _facultyNotes.length,
+        itemBuilder: (ctx, i) => _buildAnnotationCard(_facultyNotes[i], i),
+      ),
+    );
+  }
+
+  Widget _buildAnnotationCard(FacultyAnnotation note, int index) {
+    final stripe = _stripes[index % _stripes.length];
+    return IntrinsicHeight(
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(color: _black, width: 2),
+          boxShadow: const [BoxShadow(color: _black, offset: Offset(3, 3))],
         ),
-        child: TabBar(
-          controller: _tabCtrl,
-          indicator: BoxDecoration(
-            color: _purple,
-            borderRadius: BorderRadius.circular(14),
-          ),
-          labelColor: _black,
-          unselectedLabelColor: Colors.black54,
-          labelStyle: GoogleFonts.poppins(
-            fontWeight: FontWeight.w800,
-            fontSize: 13,
-          ),
-          unselectedLabelStyle: GoogleFonts.poppins(
-            fontWeight: FontWeight.w600,
-            fontSize: 13,
-          ),
-          dividerHeight: 0,
-          tabs: [
-            Tab(
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(Icons.sticky_note_2, size: 16),
-                  const SizedBox(width: 6),
-                  Text('Notes (${_facultyNotes.length})'),
-                ],
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Left coloured accent bar
+            Container(
+              width: 5,
+              decoration: BoxDecoration(
+                color: stripe,
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(14),
+                  bottomLeft: Radius.circular(14),
+                ),
               ),
             ),
-            const Tab(
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.assignment, size: 16),
-                  SizedBox(width: 6),
-                  Text('Actions'),
-                ],
+            // Card content
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(12, 12, 12, 10),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Faculty chip + timestamp
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: stripe,
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(color: _black, width: 1.5),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(Icons.school, size: 11),
+                              const SizedBox(width: 4),
+                              Text(
+                                note.facultyName,
+                                style: GoogleFonts.poppins(
+                                  fontWeight: FontWeight.w800, fontSize: 10.5),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const Spacer(),
+                        const Icon(Icons.access_time, size: 11, color: Colors.black38),
+                        const SizedBox(width: 3),
+                        Text(
+                          _timeAgo(note.createdAt),
+                          style: GoogleFonts.poppins(
+                            fontSize: 9.5,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.black38,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 9),
+                    // Note text
+                    Text(
+                      note.note,
+                      style: GoogleFonts.poppins(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                        height: 1.55,
+                        color: Colors.black87,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    // Alert ID tag
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF0F0F0),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        '# ${note.alertId}',
+                        style: GoogleFonts.poppins(
+                          fontSize: 9,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.black38,
+                          letterSpacing: 0.4,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ],
@@ -212,394 +408,246 @@ class _FacultyNotesPageState extends State<FacultyNotesPage>
     );
   }
 
-  // ─── NOTES TAB ──────────────────────────────────────────────────────────
+  // ── Notice Tab ─────────────────────────────────────────────────────────────
 
-  Widget _buildNotesTab() {
-    if (_facultyNotes.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                shape: BoxShape.circle,
-                border: Border.all(color: _black, width: 2),
-              ),
-              child:
-                  const Icon(Icons.mark_email_read, size: 48, color: _purple),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'No Faculty Notes Yet',
-              style: GoogleFonts.poppins(
-                fontWeight: FontWeight.w800,
-                fontSize: 16,
-              ),
-            ),
-            const SizedBox(height: 6),
-            Text(
-              'When your faculty adds notes or\nannotations, they will appear here.',
-              textAlign: TextAlign.center,
-              style: GoogleFonts.poppins(
-                fontSize: 13,
-                color: Colors.black54,
-              ),
-            ),
-          ],
-        ),
+  Widget _buildNoticeTab() {
+    if (_notices.isEmpty) {
+      return _emptyState(
+        icon: Icons.campaign_outlined,
+        iconColor: _sky,
+        title: 'No Notices Yet',
+        subtitle: 'Faculty notices and\nannouncements will appear here.',
       );
     }
 
     return RefreshIndicator(
       onRefresh: _loadData,
-      color: _black,
+      color: _sky,
       child: ListView.builder(
-        padding: const EdgeInsets.all(16),
-        itemCount: _facultyNotes.length,
-        itemBuilder: (ctx, i) => _buildNoteCard(_facultyNotes[i]),
+        padding: const EdgeInsets.fromLTRB(14, 10, 14, 24),
+        itemCount: _notices.length,
+        itemBuilder: (ctx, i) => _buildNoticeCard(_notices[i]),
       ),
     );
   }
 
-  Widget _buildNoteCard(FacultyAnnotation note) {
-    final color = _purple;
-    return Container(
-      margin: const EdgeInsets.only(bottom: 14),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: _black, width: 2),
-        boxShadow: const [
-          BoxShadow(color: _black, offset: Offset(4, 4)),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header stripe
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-            decoration: BoxDecoration(
-              color: color,
-              borderRadius:
-                  const BorderRadius.vertical(top: Radius.circular(16)),
-            ),
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(6),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: _black, width: 1.5),
-                  ),
-                  child: const Icon(Icons.school, size: 18),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        note.facultyName,
-                        style: GoogleFonts.poppins(
-                          fontWeight: FontWeight.w800,
-                          fontSize: 14,
-                        ),
-                      ),
-                      Text(
-                        note.alertId,
-                        style: GoogleFonts.poppins(
-                          fontWeight: FontWeight.w500,
-                          fontSize: 10,
-                          color: Colors.black54,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-          // Body
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Text(
-              note.note,
-              style: GoogleFonts.poppins(
-                fontSize: 13,
-                fontWeight: FontWeight.w500,
-                height: 1.5,
-                color: Colors.black87,
-              ),
-            ),
-          ),
-          // Footer
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-            child: Row(
-              children: [
-                Icon(Icons.access_time, size: 14, color: Colors.black45),
-                const SizedBox(width: 4),
-                Text(
-                  _timeAgo(note.createdAt),
-                  style: GoogleFonts.poppins(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.black45,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+  Widget _buildNoticeCard(Notice notice) {
+    final p = notice.priority.toLowerCase().trim();
 
-  // ─── INTERVENTION TAB ───────────────────────────────────────────────────
+    final bool isUrgent = p == 'high' || p == 'urgent' || p == 'critical';
+    final bool isLow    = p == 'low'  || p == 'normal' || p == 'info';
 
-  Widget _buildInterventionTab() {
-    if (_intervention == null || !_intervention!.interventionRequired) {
-      return Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
+    // Use app theme palette — no dark headers, match cream background
+    final Color accentBar;   // left bar
+    final Color cardTint;    // very subtle card bg tint
+    final Color iconColor;   // icon fg
+    final Color iconBg;      // icon bg bubble
+    final Color badgeBg;
+    final Color badgeFg;
+    final IconData icon;
+    final String badgeLabel;
+
+    if (isUrgent) {
+      accentBar  = const Color(0xFFE53935);   // red
+      cardTint   = const Color(0xFFFFF8F8);
+      iconColor  = const Color(0xFFE53935);
+      iconBg     = const Color(0xFFFFEBEE);
+      badgeBg    = const Color(0xFFFFCDD2);
+      badgeFg    = const Color(0xFFB71C1C);
+      icon       = Icons.warning_amber_rounded;
+      badgeLabel = '⚠ URGENT';
+    } else if (isLow) {
+      accentBar  = const Color(0xFF43A047);   // green
+      cardTint   = const Color(0xFFF8FFFE);
+      iconColor  = const Color(0xFF2E7D32);
+      iconBg     = const Color(0xFFA8E6CF);
+      badgeBg    = const Color(0xFFA8E6CF);
+      badgeFg    = const Color(0xFF1B5E20);
+      icon       = Icons.campaign_outlined;
+      badgeLabel = 'GENERAL';
+    } else {
+      accentBar  = const Color(0xFFFFAB00);   // amber — app primary
+      cardTint   = const Color(0xFFFFFDF5);
+      iconColor  = const Color(0xFFE65100);
+      iconBg     = const Color(0xFFFFECB3);
+      badgeBg    = const Color(0xFFFFD54F);
+      badgeFg    = const Color(0xFF663C00);
+      icon       = Icons.info_outline;
+      badgeLabel = 'NOTICE';
+    }
+
+    return IntrinsicHeight(
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        decoration: BoxDecoration(
+          color: cardTint,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: _black, width: 2),
+          boxShadow: const [BoxShadow(color: _black, offset: Offset(3, 3))],
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            // Left accent bar
             Container(
-              padding: const EdgeInsets.all(24),
+              width: 6,
               decoration: BoxDecoration(
-                color: Colors.white,
-                shape: BoxShape.circle,
-                border: Border.all(color: _black, width: 2),
-              ),
-              child: const Icon(Icons.check_circle, size: 48, color: _green),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'No Interventions Needed',
-              style: GoogleFonts.poppins(
-                fontWeight: FontWeight.w800,
-                fontSize: 16,
+                color: accentBar,
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(14),
+                  bottomLeft: Radius.circular(14),
+                ),
               ),
             ),
-            const SizedBox(height: 6),
-            Text(
-              'You\'re on track! No faculty\ninterventions at this time.',
-              textAlign: TextAlign.center,
-              style: GoogleFonts.poppins(
-                fontSize: 13,
-                color: Colors.black54,
+            // Content
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(12, 12, 12, 10),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Header row
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(6),
+                          decoration: BoxDecoration(
+                            color: iconBg,
+                            borderRadius: BorderRadius.circular(9),
+                            border: Border.all(color: _black, width: 1),
+                          ),
+                          child: Icon(icon, size: 15, color: iconColor),
+                        ),
+                        const SizedBox(width: 9),
+                        Expanded(
+                          child: Text(
+                            notice.title,
+                            style: GoogleFonts.poppins(
+                              fontWeight: FontWeight.w800,
+                              fontSize: 13,
+                              color: Colors.black87,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: badgeBg,
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(color: _black, width: 1.5),
+                          ),
+                          child: Text(
+                            badgeLabel,
+                            style: GoogleFonts.poppins(
+                              fontWeight: FontWeight.w900,
+                              fontSize: 8.5,
+                              color: badgeFg,
+                              letterSpacing: 0.4,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    // Divider
+                    Container(
+                      margin: const EdgeInsets.symmetric(vertical: 8),
+                      height: 1,
+                      color: accentBar.withValues(alpha: 0.2),
+                    ),
+                    // Message
+                    Text(
+                      notice.message,
+                      style: GoogleFonts.poppins(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                        height: 1.55,
+                        color: Colors.black87,
+                      ),
+                    ),
+                    const SizedBox(height: 9),
+                    // Footer
+                    Row(
+                      children: [
+                        Icon(Icons.access_time,
+                            size: 11, color: accentBar),
+                        const SizedBox(width: 4),
+                        Text(
+                          _timeAgo(notice.createdAt),
+                          style: GoogleFonts.poppins(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.black45,
+                          ),
+                        ),
+                        if (notice.expiresAt != null) ...[
+                          const SizedBox(width: 8),
+                          Container(width: 3, height: 3,
+                              decoration: BoxDecoration(
+                                color: accentBar.withValues(alpha: 0.4),
+                                shape: BoxShape.circle)),
+                          const SizedBox(width: 8),
+                          Icon(Icons.event_busy_outlined,
+                              size: 11, color: accentBar),
+                          const SizedBox(width: 4),
+                          Text(
+                            'Expires ${_timeAgo(notice.expiresAt!)}',
+                            style: GoogleFonts.poppins(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.black45,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ),
           ],
         ),
-      );
-    }
-
-    final actions = _intervention!.actions;
-    final pending = _intervention!.pendingActions;
-
-    return RefreshIndicator(
-      onRefresh: _loadData,
-      color: _black,
-      child: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          // Summary card
-          _buildSummaryCard(pending),
-          const SizedBox(height: 16),
-          // Action items
-          ...actions.map((a) => _buildActionCard(a)),
-          const SizedBox(height: 16),
-          // Next review
-          if (_intervention!.daysUntilReview > 0) _buildReviewCard(),
-        ],
       ),
     );
   }
 
-  Widget _buildSummaryCard(int pending) {
-    final priority = _intervention!.priority.toLowerCase();
-    final priorityColor = priority == 'high'
-        ? _red
-        : priority == 'moderate'
-            ? _yellow
-            : _green;
 
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: priorityColor,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: _black, width: 2),
-        boxShadow: const [
-          BoxShadow(color: _black, offset: Offset(4, 4)),
-        ],
-      ),
-      child: Row(
+
+
+
+  // ── Empty state ────────────────────────────────────────────────────────────
+
+  Widget _emptyState({
+    required IconData icon,
+    required Color iconColor,
+    required String title,
+    required String subtitle,
+  }) {
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.all(26),
             decoration: BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.circular(14),
+              shape: BoxShape.circle,
               border: Border.all(color: _black, width: 2),
+              boxShadow: const [BoxShadow(color: _black, offset: Offset(4, 4))],
             ),
-            child: const Icon(Icons.assignment_turned_in, size: 28),
+            child: Icon(icon, size: 42, color: iconColor),
           ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'FACULTY GUIDANCE',
-                  style: GoogleFonts.poppins(
-                    fontWeight: FontWeight.w900,
-                    fontSize: 13,
-                    letterSpacing: 1,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  '$pending pending action${pending == 1 ? '' : 's'}',
-                  style: GoogleFonts.poppins(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 12,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: _black, width: 2),
-            ),
-            child: Text(
-              _intervention!.priority.toUpperCase(),
-              style: GoogleFonts.poppins(
-                fontWeight: FontWeight.w900,
-                fontSize: 11,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildActionCard(InterventionAction action) {
-    final done = action.status.toLowerCase() == 'completed';
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: done ? _green.withValues(alpha: 0.3) : Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: _black, width: 2),
-        boxShadow: const [
-          BoxShadow(color: _black, offset: Offset(3, 3)),
-        ],
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: done ? _green : _purple,
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: _black, width: 1.5),
-            ),
-            child: Icon(
-              done ? Icons.check : Icons.pending_actions,
-              size: 18,
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  action.title.toUpperCase(),
-                  style: GoogleFonts.poppins(
-                    fontWeight: FontWeight.w800,
-                    fontSize: 11,
-                    letterSpacing: 0.5,
-                    color: done ? Colors.black45 : _black,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  action.description,
-                  style: GoogleFonts.poppins(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
-                    color: done ? Colors.black45 : Colors.black87,
-                    height: 1.4,
-                    decoration:
-                        done ? TextDecoration.lineThrough : TextDecoration.none,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildReviewCard() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: _black, width: 2),
-        boxShadow: const [
-          BoxShadow(color: _black, offset: Offset(3, 3)),
-        ],
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: _yellow,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: _black, width: 1.5),
-            ),
-            child: const Icon(Icons.event, size: 20),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'NEXT REVIEW',
-                  style: GoogleFonts.poppins(
-                    fontWeight: FontWeight.w800,
-                    fontSize: 11,
-                    letterSpacing: 0.5,
-                  ),
-                ),
-                Text(
-                  'In ${_intervention!.daysUntilReview} day${_intervention!.daysUntilReview == 1 ? '' : 's'}',
-                  style: GoogleFonts.poppins(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 13,
-                    color: Colors.black54,
-                  ),
-                ),
-              ],
-            ),
+          const SizedBox(height: 18),
+          Text(title,
+              style: GoogleFonts.poppins(fontWeight: FontWeight.w900, fontSize: 16)),
+          const SizedBox(height: 7),
+          Text(
+            subtitle,
+            textAlign: TextAlign.center,
+            style: GoogleFonts.poppins(
+                fontSize: 12.5, fontWeight: FontWeight.w500, color: Colors.black45),
           ),
         ],
       ),

@@ -10,6 +10,7 @@ class StudentProfile {
   final String? resumeText;
   final String? resumeUploadedAt;
   final String phoneNo;
+  final String? parentsNo;
   final String instituteId;
   final String? dateOfJoin;
   
@@ -23,6 +24,7 @@ class StudentProfile {
     required this.classes,
     required this.course,
     required this.phoneNo,
+    this.parentsNo,
     required this.instituteId,
     this.dateOfJoin,
     this.resumeText,
@@ -43,6 +45,7 @@ class StudentProfile {
       classes: json['classes'] ?? '',
       course: json['Course'] ?? '', 
       phoneNo: json['phoneNo'] ?? '',
+      parentsNo: json['parentsNo']?.toString(),
       instituteId: json['instituteId'] ?? '',
       dateOfJoin: json['dateOfJoin']?.toString(),
       resumeText: json['resumeText'],
@@ -57,6 +60,7 @@ class StudentProfile {
       'classes': classes,
       'Course': course,
       'phoneNo': phoneNo,
+      'parentsNo': parentsNo,
     };
   }
 }

@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:url_launcher/url_launcher.dart';
-import 'package:file_picker/file_picker.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:http/http.dart' as http;
+import 'package:gal/gal.dart';
 import 'dart:io';
 
 import '../models/faculty_resource_model.dart';
@@ -45,13 +47,92 @@ class _FacultyResourcePageState extends State<FacultyResourcePage> {
     }
   }
 
-  Future<void> _downloadFile(String url) async {
-    final uri = Uri.parse(url);
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
-    } else {
+  Future<void> _downloadFile(FacultyResource res) async {
+    final url = res.downloadUrl.isNotEmpty ? res.downloadUrl : res.fileUrl;
+    final fileName = res.originalFileName.isNotEmpty ? res.originalFileName : 'downloaded_file_${DateTime.now().millisecondsSinceEpoch}';
+
+    try {
+      if (Platform.isAndroid) {
+        await Permission.storage.request();
+      }
+
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not launch download URL')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Downloading $fileName...')),
+        );
+      }
+
+      final response = await http.get(Uri.parse(url));
+
+      if (response.statusCode == 200) {
+        bool isImage = res.mimeType.startsWith('image/') ||
+            fileName.toLowerCase().endsWith('.jpg') ||
+            fileName.toLowerCase().endsWith('.png') ||
+            fileName.toLowerCase().endsWith('.jpeg');
+
+        if (isImage) {
+          final tempDir = await getTemporaryDirectory();
+          final tempFilePath = '${tempDir.path}/$fileName';
+          final tempFile = File(tempFilePath);
+          await tempFile.writeAsBytes(response.bodyBytes);
+          
+          bool isSuccess = false;
+          try {
+            await Gal.putImage(tempFilePath);
+            isSuccess = true;
+          } catch (e) {
+            isSuccess = false;
+            debugPrint('Gal save error: $e');
+          }
+
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(isSuccess ? 'Image saved carefully to your Gallery!' : 'Failed to save to Gallery'),
+                duration: const Duration(seconds: 4),
+              ),
+            );
+          }
+        } else {
+          Directory? dir;
+          if (Platform.isAndroid) {
+            dir = Directory('/storage/emulated/0/Download');
+            if (!await dir.exists()) {
+              dir = await getExternalStorageDirectory();
+            }
+          } else if (Platform.isIOS) {
+            dir = await getApplicationDocumentsDirectory();
+          } else {
+            dir = await getDownloadsDirectory();
+          }
+
+          if (dir != null) {
+            final filePath = '${dir.path}/$fileName';
+            final file = File(filePath);
+            await file.writeAsBytes(response.bodyBytes);
+
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Document downloaded successfully! Check "Files -> Downloads" on your device.'),
+                  duration: const Duration(seconds: 5),
+                ),
+              );
+            }
+          }
+        }
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Failed to download file')),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error downloading file: $e')),
+        );
       }
     }
   }
@@ -272,7 +353,7 @@ class _FacultyResourcePageState extends State<FacultyResourcePage> {
                   ],
                 ),
                 GestureDetector(
-                  onTap: () => _downloadFile(res.downloadUrl.isNotEmpty ? res.downloadUrl : res.fileUrl),
+                  onTap: () => _downloadFile(res),
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                     decoration: BoxDecoration(

@@ -1,0 +1,23 @@
+﻿Analyzing notes_analyzer_page.dart...                           
+
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\pages\notes_analyzer_page.dart:348:52 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\pages\notes_analyzer_page.dart:902:39 - deprecated_member_use
+
+flutter : 2 issues found. 
+(ran in 4.1s)
+At line:1 char:1
++ flutter analyze lib/page
+s/notes_analyzer_page.dart
+ 2>&1 | Out-File -F ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~
+    + CategoryInfo        
+      : NotSpecified    : 
+(2 issues found.     (ran 
+in 4.1s):Strin    g) [], 
+RemoteExcept    ion
+    + FullyQualifiedErr   
+ orId : NativeComman    
+dError
+ 

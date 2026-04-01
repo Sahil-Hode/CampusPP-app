@@ -1,9 +1,11 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'auth_service.dart';
 import '../models/performance_model.dart';
 import '../models/student_profile_model.dart';
 import '../models/faculty_annotation_model.dart';
+import '../models/notice_model.dart';
 import 'package:http_parser/http_parser.dart';
 
 class StudentService {
@@ -396,7 +398,7 @@ class StudentService {
     }
   }
 
-  static Future<void> updateProfile(String name, String language, String classes, String course, String phoneNo) async {
+  static Future<void> updateProfile(String name, String language, String classes, String course, String phoneNo, [String? parentsNo]) async {
     final token = await AuthService.getToken();
     if (token == null) throw Exception('No token found');
 
@@ -412,6 +414,7 @@ class StudentService {
         'classes': classes,
         'Course': course,
         'phoneNo': phoneNo,
+        if (parentsNo != null) 'parentsNo': parentsNo,
       }),
     );
 
@@ -614,6 +617,38 @@ class StudentService {
 
     if (response.statusCode != 200 && response.statusCode != 204) {
       throw Exception('Failed to delete learning path: ${response.body}');
+    }
+  }
+
+  static Future<List<Notice>> getNotices() async {
+    final token = await AuthService.getToken();
+    if (token == null) throw Exception('No token found');
+
+    final url = '$_baseUrl/student/notices';
+    if (kDebugMode) debugPrint('[Notices] GET $url');
+
+    final response = await http.get(
+      Uri.parse(url),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Accept': 'application/json',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      final json = jsonDecode(response.body);
+      // Handle: { success, data: [...] }  OR  { success, notices: [...] }  OR  [...]
+      List<dynamic> list = [];
+      if (json is List) {
+        list = json;
+      } else if (json['data'] is List) {
+        list = json['data'];
+      } else if (json['notices'] is List) {
+        list = json['notices'];
+      }
+      return list.map((item) => Notice.fromJson(item)).toList();
+    } else {
+      throw Exception('Failed to load notices: ${response.statusCode}');
     }
   }
 

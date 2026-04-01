@@ -25,5 +25,3 @@ plugins {
 }
 
 include(":app")
-include(":unityLibrary")
-project(":unityLibrary").projectDir = File(rootProject.projectDir, "unityLibrary")

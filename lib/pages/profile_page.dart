@@ -405,6 +405,15 @@ class _ProfilePageState extends State<ProfilePage> {
                       ),
                       const SizedBox(height: 24),
 
+                      // Read-only Parent's Phone number
+                       _buildNeuTextField(
+                        controller: TextEditingController(text: _profile?.parentsNo ?? ''),
+                        label: 'Parent\'s Phone Number',
+                        icon: Icons.people_outline,
+                        readOnly: true,
+                      ),
+                      const SizedBox(height: 24),
+
                       // Read-only Institute
                        _buildNeuTextField(
                         controller: TextEditingController(text: _profile?.instituteName),
@@ -556,6 +565,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
   late TextEditingController _languageController;
   late TextEditingController _classesController;
   late TextEditingController _phoneNoController;
+  late TextEditingController _parentsNoController;
   late TextEditingController _courseController;
   bool _isSaving = false;
   bool _isUploadingPhoto = false;
@@ -572,6 +582,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
     _languageController = TextEditingController(text: widget.profile.language);
     _classesController = TextEditingController(text: widget.profile.classes);
     _phoneNoController = TextEditingController(text: widget.profile.phoneNo);
+    _parentsNoController = TextEditingController(text: widget.profile.parentsNo ?? '');
     _courseController = TextEditingController(text: widget.profile.course);
   }
 
@@ -581,6 +592,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
     _languageController.dispose();
     _classesController.dispose();
     _phoneNoController.dispose();
+    _parentsNoController.dispose();
     _courseController.dispose();
     super.dispose();
   }
@@ -695,6 +707,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
         _classesController.text,
         _courseController.text,
         _phoneNoController.text,
+        _parentsNoController.text,
       );
 
       final updated = StudentProfile(
@@ -707,6 +720,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
         instituteName: widget.profile.instituteName,
         course: _courseController.text,
         phoneNo: _phoneNoController.text,
+        parentsNo: _parentsNoController.text,
         instituteId: widget.profile.instituteId,
         dateOfJoin: widget.profile.dateOfJoin,
         resumeText: widget.profile.resumeText,
@@ -911,6 +925,13 @@ class _EditProfilePageState extends State<EditProfilePage> {
                   controller: _phoneNoController,
                   label: 'Phone Number',
                   icon: Icons.phone_outlined,
+                ),
+                const SizedBox(height: 24),
+                _buildNeuTextField(
+                  controller: _parentsNoController,
+                  label: 'Parent\'s Phone Number',
+                  icon: Icons.people_outline,
+                  readOnly: true,
                 ),
                 const SizedBox(height: 32),
                 SizedBox(

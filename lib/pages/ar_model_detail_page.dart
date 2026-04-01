@@ -307,7 +307,7 @@ class _ARModelDetailPageState extends State<ARModelDetailPage> {
       final screenshotBytes = await _captureModelScreenshot();
       if (screenshotBytes != null) {
         final base64Img = base64Encode(screenshotBytes);
-        visionDesc = await VisionService.analyzeImage(base64Img);
+        visionDesc = await VisionService.analyzeImage(base64Img, question);
         debugPrint('[AR Q&A] Vision: $visionDesc');
       }
     } catch (e) {

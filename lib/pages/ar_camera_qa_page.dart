@@ -277,7 +277,7 @@ class _ARCameraQAPageState extends State<ARCameraQAPage> {
       final frameBytes = await _captureFrame();
       if (frameBytes != null) {
         final base64Img = base64Encode(frameBytes);
-        visionDesc = await VisionService.analyzeImage(base64Img);
+        visionDesc = await VisionService.analyzeImage(base64Img, question);
         debugPrint('[AR Camera] Vision: $visionDesc');
       }
     } catch (e) {

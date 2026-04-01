@@ -6,7 +6,7 @@
 
 <p align="center">
   <strong>An all-in-one AI-powered academic companion app built with Flutter</strong><br>
-  Combining AR/VR immersive experiences, voice-driven AI mentorship, predictive analytics, gamification, and career readiness — all in a single mobile application.
+  Combining AR immersive experiences, voice-driven AI mentorship, predictive analytics, gamification, and career readiness — all in a single mobile application.
 </p>
 
 ---
@@ -27,7 +27,7 @@
 
 ## 🧠 Overview
 
-**Campus++** is a next-generation mobile application designed to completely transform the student academic experience. It integrates cutting-edge AI, Augmented Reality, Virtual Reality, real-time voice interactions, and predictive intelligence into a single Flutter-based mobile app.
+**Campus++** is a next-generation mobile application designed to completely transform the student academic experience. It integrates cutting-edge AI, Augmented Reality, real-time voice interactions, and predictive intelligence into a single Flutter-based mobile app.
 
 The app serves as a student's complete academic companion — from tracking performance and predicting risks, to practicing mock interviews with AI agents, exploring 3D educational models in AR, writing and executing code directly in-app, and generating career-ready PDF reports.
 
@@ -42,7 +42,6 @@ The app serves as a student's complete academic companion — from tracking perf
 | **Google Fonts (Poppins, Inter)** | Premium typography |
 | **fl_chart** | Interactive charts & data visualization |
 | **model_viewer_plus** | 3D GLB/GLTF model rendering |
-| **flutter_unity_widget_2** | Unity 3D engine integration for VR |
 | **flutter_inappwebview** | Advanced WebView for embedded content |
 | **camera** | Live camera access for AR features |
 | **speech_to_text** | Voice input / STT |
@@ -143,12 +142,7 @@ lib/
 - **Meeting-Style UI** — Video conference layout with participant tiles
 - **Active Speaker Detection** — Visual indicator for who is currently speaking
 
-### 🌐 5. VR Interview Environment
-- **Unity 3D Integration** — Full Unity engine embedded in Flutter via flutter_unity_widget_2
-- **VR Classroom Scene** — Immersive 3D classroom environment for interview practice
-- **IL2CPP Compiled Native Code** — High-performance native Unity rendering
-- **Gyroscope Camera Control** — Device motion-based camera movement in VR
-
+ 
 ### 🧑‍🏫 6. 3D AI Mentor (Deepak)
 - **3D Animated Avatar** — Full GLB model with idle and talking animations
 - **Voice Conversation** — Speak to the mentor via microphone
@@ -313,7 +307,6 @@ lib/
 | 17 | Resume Upload | `resume_upload_page.dart` | Document upload form |
 | 18 | Resume Analysis Result | `resume_analysis_result_page.dart` | ATS scoring & analysis display |
 | 19 | Mock Interview | `mock_interview_page.dart` | Voice AI interview with feedback |
-| 20 | VR Interview | `vr_interview_page.dart` | Unity-powered VR interview environment |
 | 21 | 3D Mentor | `three_d_mentor_page.dart` | Voice-interactive 3D AI mentor (Deepak) |
 | 22 | AR Viewer | `ar_viewer_page.dart` | AR model browsing & viewing |
 | 23 | AR Model Detail | `ar_model_detail_page.dart` | AR model controls & information |
@@ -392,7 +385,6 @@ lib/
 - Flutter SDK (3.38.5+)
 - Android SDK (API 26+)
 - Android NDK (27.0+)
-- Unity Editor (6000.3.10f1) — for VR features
 - Firebase project with `google-services.json`
 
 ### Steps
@@ -423,14 +415,14 @@ flutter build apk --debug
 
 | Metric | Count |
 |---|---|
-| **Total Pages** | 26 |
+| **Total Pages** | 25 |
 | **Total Services** | 17 |
 | **Total Data Models** | 9 |
 | **Total Widgets** | 16 |
 | **Total Dart Files** | 70+ |
 | **Supported Languages** | English, Hindi, Marathi, Rajasthani |
 | **AI Models Used** | OpenAI GPT-4o, GPT-4o Vision |
-| **3D Engines** | model_viewer_plus, Unity 3D |
+| **3D Engines** | model_viewer_plus |
 
 ---
 

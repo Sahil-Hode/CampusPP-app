@@ -3,12 +3,13 @@ import 'package:http/http.dart' as http;
 
 class VisionService {
   static const String _apiKey =
-      'YOUR_OPENAI_API_KEY';
+      'YOUR_OPENAI_API_KEY_HERE'; // TODO: Replace with your actual key safely
 
   /// Analyzes an image using OpenAI GPT-4o Vision API.
   /// [imageBase64] — base64-encoded image bytes (JPEG/PNG).
-  /// Returns a descriptive text of what the image contains.
-  static Future<String> analyzeImage(String imageBase64) async {
+  /// [userQuestion] — optional question from the user to help the vision model focus its analysis.
+  /// Returns a descriptive text of what the image contains regarding the question.
+  static Future<String> analyzeImage(String imageBase64, [String? userQuestion]) async {
     final url = Uri.parse('https://api.openai.com/v1/chat/completions');
 
     final body = jsonEncode({
@@ -30,8 +31,9 @@ class VisionService {
           'content': [
             {
               'type': 'text',
-              'text':
-                  'Analyze this image carefully. What objects, stickers, labels, text, or products do you see? Be specific and precise.',
+              'text': userQuestion != null && userQuestion.isNotEmpty
+                  ? 'Please analyze this image to answer the following question: "$userQuestion"\nBe specific and precise.'
+                  : 'Analyze this image carefully. What objects, stickers, labels, text, or products do you see? Be specific and precise.',
             },
             {
               'type': 'image_url',

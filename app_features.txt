@@ -20,8 +20,7 @@
 17. **Resume Upload Page** (`resume_upload_page.dart`) - Dedicated form for document upload (PDF/DOCX).
 18. **Resume Analysis Result Page** (`resume_analysis_result_page.dart`) - ATS scoring, keyword detection, and formatting feedback from uploaded resumes.
 19. **Mock Interview Page** (`mock_interview_page.dart`) - Core Voice AI Mock Interview dashboard tying directly into the student's active profile resume.
-20. **VR Interview Page** (`vr_interview_page.dart`) - Fully immersive Virtual Reality setup for realistic interview scenario training.
-21. **3D Mentor Page** (`three_d_mentor_page.dart`) - Conversational 3D model interface (Deepak) featuring STT, live audio dictation, dynamic lighting, and context-awareness.
+20. **3D Mentor Page** (`three_d_mentor_page.dart`) - Conversational 3D model interface (Deepak) featuring STT, live audio dictation, dynamic lighting, and context-awareness.
 22. **AR Viewer Page** (`ar_viewer_page.dart`) - Main Augmented Reality viewer for 3D educational models.
 23. **AR Model Detail Page** (`ar_model_detail_page.dart`) - Detailed breakdown and control schema for active AR projections.
 24. **Chatbot Page** (`chatbot_page.dart`) - Generalized, non-vocal AI interaction tool.
@@ -30,7 +29,7 @@
 ## CORE FEATURES & BACKEND INTEGRATIONS
 1. **Advanced Predictive Analytics Engine**: Real-time generation of student stability scores, predictive risk alerts, and dynamic success simulations based on real-time data flow.
 2. **Context-Aware 3D AI Mentorship Engine**: A 3D avatar that accepts microphone voice commands in multiple regional languages (English, Hindi, Marathi, Rajasthani), parses the audio against the user's live academic standing, and speaks back using realtime Text-to-Speech lip-sync animation. 
-3. **Immersive Sandbox Generation**: Both AR parsing and VR immersive environment loading frameworks to embed 3D GLB/GLTF assets seamlessly inside Flutter.
+3. **Immersive Sandbox Generation**: AR parsing frameworks to embed 3D GLB/GLTF assets seamlessly inside Flutter.
 4. **WebSocket Streaming Infrastructure**: Heavy reliance on live `Socket.io` connection buffering for streaming instant Mock Interview TTS/STT blobs back and forth without HTTP polling delays.
 5. **Real-time Code Runner Environment**: An isolated sandbox where students can actually write, compile, and execute programmatic syntax (languages like Python, Dart, etc.) on the fly.
 6. **Intelligent Resume Analyzer**: Uses LLMs to rip text from user documents (PDF/DOC), rate format structure, highlight strengths, and identify missing industry-standard skills/keywords.
